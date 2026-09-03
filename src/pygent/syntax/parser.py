@@ -37,7 +37,7 @@ class SyntaxParser:
         invocations: list[SyntaxInvocation] = []
         spans: list[tuple[int, int]] = []
 
-        for index, character in enumerate(text):
+        for index, _character in enumerate(text):
             if index and not text[index - 1].isspace():
                 continue
 

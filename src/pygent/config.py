@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import os
 import tomllib
-import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -22,10 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 _CONFIG_DIR_NAME = "pygent"
 _CONFIG_FILE_NAME = "config.toml"
-from typing import Any
 
-from platformdirs import user_config_dir
-from pydantic import BaseModel, ConfigDict, Field
 
 _CONFIG_DIR_NAME = "pygent"
 _CONFIG_FILE_NAME = "config.toml"
@@ -70,15 +66,12 @@ def _ensure_loaded() -> None:
     """Load ``.env`` from the current directory and parents once per process."""
     global _LOADED, _LOAD_ERROR
 
-
     if _LOADED:
         return
-
 
     _LOADED = True
 
     try:
-        from dotenv import find_dotenv, load_dotenv
         from dotenv import find_dotenv, load_dotenv
     except ImportError as exc:
         _LOAD_ERROR = exc
@@ -88,7 +81,6 @@ def _ensure_loaded() -> None:
         env_path = find_dotenv(usecwd=True)
     except Exception:
         return
-
 
     if env_path:
         load_dotenv(env_path, override=False)
@@ -102,7 +94,6 @@ def load_dotenv(*, path: str | Path | None = None) -> bool:
     """
     global _LOADED, _LOAD_ERROR
 
-
     if path is not None:
         _LOADED = False
         _LOADED = False
@@ -115,7 +106,6 @@ def load_dotenv(*, path: str | Path | None = None) -> bool:
             return False
 
         return bool(_load(Path(path), override=False))
-
 
     _ensure_loaded()
     return _LOAD_ERROR is None

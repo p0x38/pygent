@@ -27,9 +27,7 @@ class SyntaxRegistry:
         if not handler.prefix:
             raise ValueError("Syntax prefix cannot be empty")
         if handler.prefix in self._handlers and not replace:
-            raise ValueError(
-                f"Syntax prefix already registered: {handler.prefix!r}"
-            )
+            raise ValueError(f"Syntax prefix already registered: {handler.prefix!r}")
         self._handlers[handler.prefix] = handler
 
     def unregister(self, prefix: str) -> SyntaxHandler | None:
