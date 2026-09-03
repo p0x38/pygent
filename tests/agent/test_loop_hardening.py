@@ -115,14 +115,5 @@ async def test_tool_timeout_raises_normalised_error() -> None:
     response = await loop.run([Message(role="user", content="hi")])
 
     assert response.content == "done"
-    # The tool failure message should be visible in the messages history.
     tool_message = [m for m in loop.tools.definitions() if m.name == "slow"]
-    assert tool_message  # tool still registered
-    # The model sees the failure as a tool message in the next iteration.
-    assert (
-        "exceeded timeout"
-        in str(
-            [m for m in []]  # placeholder; full message is in the loop internals
-        )
-        or True
-    )  # The main contract is that the loop returns a response.
+    assert tool_message
