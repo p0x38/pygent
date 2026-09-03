@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 
 from pygent.syntax.base import SyntaxHandler
 
@@ -25,7 +25,7 @@ class SyntaxRegistry:
         if not handler.name:
             raise ValueError("Syntax handler name cannot be empty")
         if not handler.prefix:
-            raise ValueError("Syntax handler prefix cannot be empty")
+            raise ValueError("Syntax prefix cannot be empty")
         if handler.prefix in self._handlers and not replace:
             raise ValueError(
                 f"Syntax prefix already registered: {handler.prefix!r}"
@@ -47,7 +47,7 @@ class SyntaxRegistry:
                 return self._handlers[prefix]
         return None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[SyntaxHandler]:
         return iter(self._handlers.values())
 
     def __len__(self) -> int:
