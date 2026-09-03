@@ -27,7 +27,7 @@ class ToolDefinition(BaseModel):
         if not isinstance(properties, dict):
             raise ValueError("tool parameter properties must be an object")
 
-        required = schema.get("required", ())
+        required = schema.get("required", [])
         if not isinstance(required, list):
             raise ValueError("tool parameter required must be an array")
 
