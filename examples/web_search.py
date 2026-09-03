@@ -14,7 +14,7 @@ from pygent import Agent
 from pygent.providers.base import Provider
 from pygent.skills.web_search import WebSearchSkill
 from pygent.tools import ToolRegistry
-from pygent.types import Message, ModelResponse, ToolDefinition
+from pygent.types import Message, ModelResponse, ToolCall, ToolDefinition
 
 
 class ScriptedProvider(Provider):
@@ -32,11 +32,11 @@ class ScriptedProvider(Provider):
             return ModelResponse(
                 content=None,
                 tool_calls=[
-                    {
-                        "id": "c1",
-                        "name": "web_search",
-                        "arguments": {"query": "pygent"},
-                    }
+                    ToolCall(
+                        id="c1",
+                        name="web_search",
+                        arguments={"query": "pygent"},
+                    )
                 ],
             )
         last_tool = next(

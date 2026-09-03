@@ -13,7 +13,7 @@ from typing import Any
 from pygent import Agent
 from pygent.providers.base import Provider
 from pygent.tools import Tool, ToolRegistry
-from pygent.types import Message, ModelResponse, ToolDefinition
+from pygent.types import Message, ModelResponse, ToolCall, ToolDefinition
 
 
 class ReverseTool(Tool):
@@ -56,11 +56,11 @@ class ScriptedProvider(Provider):
             return ModelResponse(
                 content=None,
                 tool_calls=[
-                    {
-                        "id": "c1",
-                        "name": "reverse",
-                        "arguments": {"text": "hello"},
-                    }
+                    ToolCall(
+                        id="c1",
+                        name="reverse",
+                        arguments={"text": "hello"},
+                    )
                 ],
             )
         last_tool = next(
