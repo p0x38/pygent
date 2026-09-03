@@ -16,6 +16,7 @@
 - [x] Fix tool type variance in tests
 - [x] Add multiple-tool-call tests
 - [x] Improve agent context integration
+- [x] Fix Ruff import sorting in type modules
 
 ## Work in progress
 
