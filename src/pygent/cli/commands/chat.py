@@ -73,6 +73,10 @@ async def _chat(provider: str, model: str) -> None:
         if not prompt:
             continue
 
+        command: dict[str, Any] | None = None
+        processed_text = prompt
+        metadata: dict[str, Any] = {}
+
         if not syntax_session.config.enabled and prompt.startswith("/syntax"):
             command_text = prompt[len("/syntax") :].strip()
             command = {"command": "syntax", "arguments": command_text}
@@ -94,6 +98,8 @@ async def _chat(provider: str, model: str) -> None:
                 ),
                 None,
             )
+            processed_text = processed.text
+            metadata = processed.metadata
 
         if command is not None:
             name = str(command.get("command", ""))
@@ -136,10 +142,7 @@ async def _chat(provider: str, model: str) -> None:
 
         if not syntax_session.config.enabled:
             processed_text = prompt
-            metadata: dict[str, Any] = {}
-        else:
-            processed_text = processed.text
-            metadata = processed.metadata
+            metadata = {}
 
         if not processed_text:
             continue

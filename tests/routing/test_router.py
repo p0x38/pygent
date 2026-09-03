@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import pytest
 
 from pygent.exceptions import RouterError
@@ -24,9 +26,9 @@ class _StubProvider(Provider):
 
     async def complete(
         self,
-        messages: list[Message],
+        messages: Sequence[Message],
         *,
-        tools: list[ToolDefinition] = (),
+        tools: Sequence[ToolDefinition] = (),
     ) -> ModelResponse:
         self.calls += 1
         if self.error is not None:

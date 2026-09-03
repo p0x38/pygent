@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from importlib.metadata import EntryPoint, entry_points
-from typing import Any
+from typing import Protocol, cast
 
 from pygent.syntax.plugins import SyntaxPlugin
 from pygent.syntax.registry import SyntaxRegistry
@@ -12,12 +12,23 @@ from pygent.syntax.registry import SyntaxRegistry
 ENTRY_POINT_GROUP = "pygent.syntax"
 
 
-def _load_plugin(entry_point: EntryPoint) -> SyntaxPlugin:
+class _EntryPoint(Protocol):
+    """Minimal entry-point interface required by the loader."""
+
+    name: str
+
+    def load(self) -> object:
+        """Load the object exposed by the entry point."""
+        ...
+
+
+def _load_plugin(entry_point: _EntryPoint) -> SyntaxPlugin:
     """Load and validate a syntax plugin from an entry point."""
-    plugin: Any = entry_point.load()
+    plugin: object = entry_point.load()
 
     if not hasattr(plugin, "register_syntax") and callable(plugin):
-        plugin = plugin()
+        factory = cast(Callable[[], object], plugin)
+        plugin = factory()
 
     if not hasattr(plugin, "register_syntax"):
         raise TypeError(
@@ -25,7 +36,7 @@ def _load_plugin(entry_point: EntryPoint) -> SyntaxPlugin:
             "a register_syntax() method"
         )
 
-    return plugin
+    return cast(SyntaxPlugin, plugin)
 
 
 def discover_syntax_plugins(
@@ -40,7 +51,7 @@ def load_syntax_plugins(
     registry: SyntaxRegistry,
     *,
     group: str = ENTRY_POINT_GROUP,
-    plugins: Iterable[EntryPoint] | None = None,
+    plugins: Iterable[_EntryPoint] | None = None,
 ) -> tuple[SyntaxPlugin, ...]:
     """Load and register external syntax plugins.
 

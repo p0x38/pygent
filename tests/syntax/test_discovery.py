@@ -33,6 +33,13 @@ class ExampleHandler(SyntaxHandler):
         return SyntaxResult(text=value)
 
 
+class FakeEntryPoint:
+    name = "example"
+
+    def load(self) -> object:
+        return ExamplePlugin()
+
+
 def test_load_syntax_plugins_from_entry_points() -> None:
     entry_point = FakeEntryPoint()
 

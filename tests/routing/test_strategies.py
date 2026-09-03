@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import pytest
 
 from pygent.providers.base import Provider
@@ -19,9 +21,9 @@ class _StubProvider(Provider):
 
     async def complete(
         self,
-        messages: list[Message],
+        messages: Sequence[Message],
         *,
-        tools: list[ToolDefinition] = (),
+        tools: Sequence[ToolDefinition] = (),
     ) -> ModelResponse:
         self.calls += 1
         return ModelResponse(content=f"{self.name}-{self.calls}")

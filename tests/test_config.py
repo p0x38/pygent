@@ -28,16 +28,19 @@ def test_load_dotenv_without_dependency_returns_false(
 ) -> None:
     """If ``python-dotenv`` is not installed, ``load_dotenv`` is a safe no-op."""
     monkeypatch.setitem(__import__("sys").modules, "dotenv", None)
-    # Force the helper to think the import failed on the next attempt.
     monkeypatch.setattr(config, "_LOAD_ERROR", ImportError("no dotenv"))
     assert config.load_dotenv() is False
 
 
 def test_load_dotenv_with_path(
-    tmp_path, monkeypatch: pytest.MonkeyPatch, _reset_loaded: None
+    tmp_path: os.PathLike[str],
+    monkeypatch: pytest.MonkeyPatch,
+    _reset_loaded: None,
 ) -> None:
     pytest.importorskip("dotenv")
-    env_file = tmp_path / ".env"
+    from pathlib import Path
+
+    env_file = Path(tmp_path) / ".env"
     env_file.write_text("FOO_FROM_FILE=hello\n", encoding="utf-8")
 
     monkeypatch.delenv("FOO_FROM_FILE", raising=False)

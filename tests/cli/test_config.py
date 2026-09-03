@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
 
@@ -25,7 +27,7 @@ def test_config_get_missing() -> None:
     assert "PYGENT_TEST_MISSING is not set." in result.output
 
 
-def test_config_get_value(monkeypatch) -> None:
+def test_config_get_value(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PYGENT_TEST_VALUE", "hello")
 
     runner = CliRunner()
@@ -35,7 +37,7 @@ def test_config_get_value(monkeypatch) -> None:
     assert "PYGENT_TEST_VALUE=hello" in result.output
 
 
-def test_config_get_secret_is_masked(monkeypatch) -> None:
+def test_config_get_secret_is_masked(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PYGENT_TEST_API_KEY", "super-secret")
 
     runner = CliRunner()
@@ -46,7 +48,7 @@ def test_config_get_secret_is_masked(monkeypatch) -> None:
     assert "super-secret" not in result.output
 
 
-def test_config_list(monkeypatch) -> None:
+def test_config_list(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PYGENT_TEST_VALUE", "hello")
     monkeypatch.setenv("OPENROUTER_API_KEY", "super-secret")
 
@@ -59,7 +61,7 @@ def test_config_list(monkeypatch) -> None:
     assert "super-secret" not in result.output
 
 
-def test_load_config(tmp_path) -> None:
+def test_load_config(tmp_path: Path) -> None:
     config_file = tmp_path / "config.toml"
     config_file.write_text(
         """
@@ -76,14 +78,14 @@ model = "test-model"
     assert config.default.model == "test-model"
 
 
-def test_load_config_missing(tmp_path) -> None:
+def test_load_config_missing(tmp_path: Path) -> None:
     config = load_config(tmp_path / "missing.toml")
 
     assert config.default.provider == "ollama"
     assert config.default.model == "qwen2.5-coder:3b"
 
 
-def test_init_config(tmp_path, monkeypatch) -> None:
+def test_init_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
@@ -102,7 +104,9 @@ def test_init_config(tmp_path, monkeypatch) -> None:
     assert config.default.model == "qwen2.5-coder:3b"
 
 
-def test_init_config_refuses_overwrite(tmp_path, monkeypatch) -> None:
+def test_init_config_refuses_overwrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
@@ -116,7 +120,9 @@ def test_init_config_refuses_overwrite(tmp_path, monkeypatch) -> None:
         init_config()
 
 
-def test_init_config_force_overwrites(tmp_path, monkeypatch) -> None:
+def test_init_config_force_overwrites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
@@ -136,7 +142,7 @@ def test_init_config_force_overwrites(tmp_path, monkeypatch) -> None:
     assert config.default.model == "qwen2.5-coder:3b"
 
 
-def test_config_init(tmp_path, monkeypatch) -> None:
+def test_config_init(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
@@ -158,7 +164,9 @@ def test_config_init(tmp_path, monkeypatch) -> None:
     assert 'model = "qwen2.5-coder:3b"' in content
 
 
-def test_config_init_command(tmp_path, monkeypatch) -> None:
+def test_config_init_command(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
