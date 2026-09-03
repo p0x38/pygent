@@ -40,6 +40,13 @@ class SyntaxRegistry:
         """Return the handler for ``prefix`` if registered."""
         return self._handlers.get(prefix)
 
+    def match(self, text: str, index: int) -> SyntaxHandler | None:
+        """Return the longest handler prefix matching ``text[index:]``."""
+        for prefix in sorted(self._handlers, key=len, reverse=True):
+            if text.startswith(prefix, index):
+                return self._handlers[prefix]
+        return None
+
     def __iter__(self):
         return iter(self._handlers.values())
 
