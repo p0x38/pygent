@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import pytest
 
 from pygent.agent import Agent
@@ -15,9 +17,9 @@ class _StubProvider(Provider):
 
     async def complete(
         self,
-        messages: list[Message],
+        messages: Sequence[Message],
         *,
-        tools: list[ToolDefinition] = (),
+        tools: Sequence[ToolDefinition] = (),
     ) -> ModelResponse:
         self.received.append(list(messages))
         return self.responses.pop(0)
