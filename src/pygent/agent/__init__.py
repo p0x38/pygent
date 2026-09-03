@@ -1,3 +1,6 @@
-from pygent.agent.agent import Agent, AgentResponse
+"""Agent orchestration primitives."""
 
-__all__ = ["Agent", "AgentResponse"]
+from pygent.agent.agent import Agent, AgentResponse
+from pygent.agent.context import AgentContext
+
+__all__ = ["Agent", "AgentContext", "AgentResponse"]
