@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any
 
+from pygent.agent.context import AgentContext
 from pygent.types import ToolDefinition
 
 
@@ -20,6 +21,8 @@ class Tool(ABC):
     async def execute(
         self,
         arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
     ) -> Any:
         """Execute the tool with model-supplied arguments."""
         raise NotImplementedError
