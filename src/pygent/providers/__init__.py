@@ -1,3 +1,6 @@
-from pygent.providers.base import Provider
+"""LLM provider implementations."""
 
-__all__ = ["Provider"]
+from pygent.providers.base import Provider
+from pygent.providers.ollama import OllamaProvider
+
+__all__ = ["OllamaProvider", "Provider"]
