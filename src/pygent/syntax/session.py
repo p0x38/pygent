@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pygent.config import SyntaxConfig
+from pygent.syntax.builtin import BuiltinSyntaxPlugin
 from pygent.syntax.discovery import load_syntax_plugins
 from pygent.syntax.processor import SyntaxProcessor
 from pygent.syntax.registry import SyntaxRegistry
-from pygent.syntax.builtin import BuiltinSyntaxPlugin
 
 
 @dataclass(slots=True)
@@ -20,6 +20,7 @@ class SyntaxSession:
     """
 
     config: SyntaxConfig
+    registry: SyntaxRegistry = field(init=False)
 
     def __post_init__(self) -> None:
         self._rebuild()
@@ -59,3 +60,6 @@ class SyntaxSession:
     def processor(self) -> SyntaxProcessor:
         """Return a processor for the current registry."""
         return SyntaxProcessor(self.registry)
+
+
+__all__ = ["SyntaxSession"]
