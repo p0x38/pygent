@@ -14,6 +14,7 @@ from pygent.syntax.discovery import (
 )
 from pygent.syntax.parser import ParsedInput, SyntaxInvocation, SyntaxParser
 from pygent.syntax.plugins import SyntaxPlugin, inject_syntax_plugin
+from pygent.syntax.processor import ProcessedInput, SyntaxProcessor
 from pygent.syntax.registry import SyntaxRegistry
 
 __all__ = [
@@ -22,11 +23,13 @@ __all__ = [
     "ENTRY_POINT_GROUP",
     "MentionHandler",
     "ParsedInput",
+    "ProcessedInput",
     "SyntaxContext",
     "SyntaxHandler",
     "SyntaxInvocation",
     "SyntaxParser",
     "SyntaxPlugin",
+    "SyntaxProcessor",
     "SyntaxRegistry",
     "SyntaxResult",
     "create_builtin_syntax_registry",

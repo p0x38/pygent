@@ -45,11 +45,12 @@ class SyntaxParser:
             if handler is None:
                 continue
 
-            end = index + len(handler.prefix)
-            while end < len(text) and not text[end].isspace():
-                end += 1
+            end = len(text) if handler.consume_rest else index + len(handler.prefix)
+            if not handler.consume_rest:
+                while end < len(text) and not text[end].isspace():
+                    end += 1
 
-            value = text[index + len(handler.prefix) : end]
+            value = text[index + len(handler.prefix) : end].strip()
             if not value:
                 continue
 
@@ -63,6 +64,9 @@ class SyntaxParser:
                 )
             )
             spans.append((index, end))
+
+            if handler.consume_rest:
+                break
 
         if not spans:
             return ParsedInput(text=text, invocations=())

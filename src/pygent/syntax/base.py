@@ -28,6 +28,7 @@ class SyntaxHandler(ABC):
 
     name: str
     prefix: str
+    consume_rest: bool = False
 
     @abstractmethod
     async def handle(

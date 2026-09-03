@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 import click
 
 from pygent import Agent
+from pygent.agent import AgentContext
 from pygent.memory import ConversationMemory
+from pygent.syntax import (
+    SyntaxContext,
+    SyntaxProcessor,
+    create_builtin_syntax_registry,
+    load_syntax_plugins,
+)
 
 from ...config import get_default_model, get_default_provider
 from ...providers.base import Provider
@@ -29,6 +37,9 @@ def _create_provider(provider: str, model: str) -> Provider:
 async def _chat(provider: str, model: str) -> None:
     llm = _create_provider(provider, model)
     memory = ConversationMemory(conversation_id="cli")
+    registry = create_builtin_syntax_registry()
+    load_syntax_plugins(registry)
+    syntax = SyntaxProcessor(registry)
 
     agent = Agent(
         llm,
@@ -57,24 +68,43 @@ async def _chat(provider: str, model: str) -> None:
         if not prompt:
             continue
 
-        if prompt in {"/exit", "/quit"}:
-            break
-
-        if prompt == "/clear":
-            memory.clear()
-            console.print("[dim]Conversation cleared.[/dim]")
+        try:
+            processed = await syntax.process(prompt, context=SyntaxContext())
+        except Exception as exc:
+            console.print(f"[red]Syntax error:[/red] {exc}")
             continue
 
-        if prompt == "/help":
-            console.print(
-                "/clear  Clear conversation history\n"
-                "/exit   Exit the chat\n"
-                "/quit   Exit the chat"
-            )
+        command: dict[str, Any] | None = next(
+            (
+                result.metadata
+                for result in processed.results
+                if result.metadata.get("type") == "command"
+            ),
+            None,
+        )
+
+        if command is not None:
+            name = str(command.get("command", ""))
+            if name in {"exit", "quit"}:
+                break
+            if name == "clear":
+                memory.clear()
+                console.print("[dim]Conversation cleared.[/dim]")
+                continue
+            if name == "help":
+                console.print(
+                    "/clear  Clear conversation history\n"
+                    "/exit   Exit the chat\n"
+                    "/quit   Exit the chat"
+                )
+                continue
+
+        if not processed.text:
             continue
 
         try:
-            response = await agent.run(prompt)
+            context = AgentContext(metadata=processed.metadata)
+            response = await agent.run(processed.text, context=context)
         except Exception as exc:
             console.print(f"[red]Error:[/red] {exc}")
             continue
