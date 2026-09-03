@@ -35,7 +35,7 @@ class SelectionStrategy(ABC):
         """Return the next provider entry to use."""
         raise NotImplementedError
 
-    def on_failure(  # noqa: B027 - optional extension point
+    def on_failure(  # ruff: ignore[empty-method-without-abstract-decorator] - optional extension point
         self,
         entry: ProviderEntry,
         error: BaseException,

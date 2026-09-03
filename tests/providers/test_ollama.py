@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -30,6 +31,7 @@ class FakeMessage:
         self.tool_calls = list(tool_calls)
 
 
+@dataclass
 class FakeResponse:
     def __init__(self, message: FakeMessage, done_reason: str | None = None) -> None:
         self.message = message
