@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 
 from pygent.agent.context import AgentContext
@@ -32,7 +31,6 @@ class Agent:
             tools,
             max_iterations=max_iterations,
         )
-        self._run_lock = asyncio.Lock()
 
     async def run(
         self,
@@ -42,6 +40,5 @@ class Agent:
     ) -> AgentResponse:
         """Run the agent for a single prompt."""
         del context  # Passed to tools once contextual tool execution is added.
-        async with self._run_lock:
-            response = await self.loop.run([user_message(prompt)])
+        response = await self.loop.run([user_message(prompt)])
         return AgentResponse(text=response.content or "")
