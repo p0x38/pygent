@@ -59,19 +59,16 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/p0x38/pygentix"
-Repository = "https://github.com/p0x38/pygentix"
-Issues = "https://github.com/p0x38/pygentix/issues"
-
+Homepage = "https://github.com/p0x38/pygent"
+Repository = "https://github.com/p0x38/pygent"
+Issues = "https://github.com/p0x38/pygent/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pygent"]
 
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-
 
 [tool.ruff]
 target-version = "py312"
@@ -92,7 +89,6 @@ select = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-
 
 [tool.mypy]
 python_version = "3.12"
