@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
 
+from pygent.agent.context import AgentContext
 from pygent.agent.loop import AgentLoop
 from pygent.exceptions import AgentLoopError
 from pygent.providers.base import Provider
@@ -36,8 +38,13 @@ class EchoTool(Tool):
             parameters={"type": "object"},
         )
 
-    async def execute(self, arguments: Mapping[str, Any]) -> Any:
-        return arguments["value"]
+    async def execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
+    ) -> Any:
+        return arguments["value"] if context is None else context.metadata["prefix"] + arguments["value"]
 
 
 class FailingTool(Tool):
@@ -48,8 +55,37 @@ class FailingTool(Tool):
             description="Always fails.",
         )
 
-    async def execute(self, arguments: Mapping[str, Any]) -> Any:
+    async def execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
+    ) -> Any:
         raise ValueError("boom")
+
+
+class SlowTool(Tool):
+    def __init__(self) -> None:
+        self.active = 0
+        self.max_active = 0
+
+    @property
+    def definition(self) -> ToolDefinition:
+        return ToolDefinition(name="slow", description="A concurrent test tool.")
+
+    async def execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
+    ) -> Any:
+        self.active += 1
+        self.max_active = max(self.max_active, self.active)
+        try:
+            await asyncio.sleep(0)
+            return arguments["value"]
+        finally:
+            self.active -= 1
 
 
 @pytest.mark.asyncio
@@ -89,22 +125,41 @@ async def test_executes_tool_and_continues() -> None:
 
 
 @pytest.mark.asyncio
-async def test_executes_multiple_tool_calls() -> None:
+async def test_passes_context_to_tool() -> None:
+    call = ToolCall(id="call-1", name="echo", arguments={"value": "world"})
+    provider = FakeProvider(
+        [ModelResponse(tool_calls=[call]), ModelResponse(content="done")]
+    )
+    tools = ToolRegistry()
+    tools.register(EchoTool())
+    loop = AgentLoop(provider, tools)
+    messages = [Message(role="user", content="echo world")]
+    context = AgentContext(metadata={"prefix": "hello "})
+
+    await loop.run(messages, context=context)
+
+    assert messages[-1].content == "hello world"
+
+
+@pytest.mark.asyncio
+async def test_executes_multiple_tool_calls_concurrently() -> None:
     calls = [
-        ToolCall(id="call-1", name="echo", arguments={"value": "one"}),
-        ToolCall(id="call-2", name="echo", arguments={"value": "two"}),
+        ToolCall(id="call-1", name="slow", arguments={"value": "one"}),
+        ToolCall(id="call-2", name="slow", arguments={"value": "two"}),
     ]
     provider = FakeProvider(
         [ModelResponse(tool_calls=calls), ModelResponse(content="done")]
     )
     tools = ToolRegistry()
-    tools.register(EchoTool())
+    slow_tool = SlowTool()
+    tools.register(slow_tool)
     loop = AgentLoop(provider, tools)
-    messages = [Message(role="user", content="echo both")]
+    messages = [Message(role="user", content="run both")]
 
     response = await loop.run(messages)
 
     assert response.content == "done"
+    assert slow_tool.max_active == 2
     assert [message.content for message in messages[-2:]] == ["one", "two"]
     assert [message.tool_call_id for message in messages[-2:]] == [
         "call-1",
