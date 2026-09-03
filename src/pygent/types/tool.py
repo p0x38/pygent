@@ -1,8 +1,60 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+JsonSchemaType = Literal[
+    "object",
+    "string",
+    "integer",
+    "number",
+    "boolean",
+    "array",
+    "null",
+]
+
+
+class JsonSchema(BaseModel):
+    """Validated subset of JSON Schema supported by Pygent tools."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: JsonSchemaType | None = None
+    description: str | None = None
+    enum: list[Any] | None = None
+    properties: dict[str, JsonSchema] | None = None
+    required: list[str] = Field(default_factory=list)
+    additionalProperties: bool | JsonSchema | None = None
+    items: JsonSchema | None = None
+
+    @model_validator(mode="after")
+    def validate_structure(self) -> JsonSchema:
+        if self.type == "object" and self.properties is None and self.items is not None:
+            raise ValueError("items is not valid for object schemas")
+        if self.type != "object" and self.properties is not None:
+            raise ValueError("properties is only valid for object schemas")
+        if self.type != "array" and self.items is not None:
+            raise ValueError("items is only valid for array schemas")
+
+        if self.properties is not None:
+            missing = [name for name in self.required if name not in self.properties]
+            if missing:
+                raise ValueError(
+                    "required fields must be declared in properties: "
+                    + ", ".join(missing)
+                )
+        elif self.required:
+            raise ValueError("required is only valid when properties are defined")
+
+        if len(self.required) != len(set(self.required)):
+            raise ValueError("required fields must be unique")
+
+        if self.enum is not None and not self.enum:
+            raise ValueError("enum must contain at least one value")
+
+        return self
 
 
 class ToolDefinition(BaseModel):
@@ -13,6 +65,12 @@ class ToolDefinition(BaseModel):
     name: str
     description: str
     parameters: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_parameters_schema(self) -> ToolDefinition:
+        if self.parameters:
+            JsonSchema.model_validate(self.parameters)
+        return self
 
     def validate_arguments(self, arguments: dict[str, Any]) -> None:
         """Validate tool arguments against the supported JSON Schema subset."""

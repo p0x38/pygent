@@ -8,6 +8,7 @@
 - [x] Tool abstraction and registry
 - [x] Tool execution error handling
 - [x] Tool argument validation
+- [x] Tool JSON Schema structure validation
 - [x] GitHub Actions test workflow
 - [x] GitHub Actions lint/type-check workflow
 - [x] Ollama provider foundation
