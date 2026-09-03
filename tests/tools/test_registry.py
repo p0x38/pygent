@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+from pygent.agent.context import AgentContext
 from pygent.tools import Tool, ToolRegistry
 from pygent.types import ToolDefinition
 
@@ -20,7 +21,12 @@ class DummyTool(Tool):
     def definition(self) -> ToolDefinition:
         return self._definition
 
-    async def execute(self, arguments: Mapping[str, Any]) -> Any:
+    async def execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
+    ) -> Any:
         return arguments
 
 
