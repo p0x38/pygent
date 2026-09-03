@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+from pygent.agent.context import AgentContext
 from pygent.exceptions import AgentLoopError
 from pygent.providers.base import Provider
 from pygent.tools.calls import execute_tool_call
@@ -25,7 +26,12 @@ class AgentLoop:
         self.tools = tools or ToolRegistry()
         self.max_iterations = max_iterations
 
-    async def run(self, messages: list[Message]) -> ModelResponse:
+    async def run(
+        self,
+        messages: list[Message],
+        *,
+        context: AgentContext | None = None,
+    ) -> ModelResponse:
         """Run until the model produces a response without tool calls."""
         for _iteration in range(1, self.max_iterations + 1):
             response = await self.provider.complete(
@@ -45,7 +51,10 @@ class AgentLoop:
             )
 
             results = await asyncio.gather(
-                *(execute_tool_call(self.tools, call) for call in response.tool_calls)
+                *(
+                    execute_tool_call(self.tools, call, context=context)
+                    for call in response.tool_calls
+                )
             )
             messages.extend(
                 Message(
