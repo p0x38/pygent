@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Any
 
 from pygent.tools.registry import ToolRegistry
@@ -13,9 +12,8 @@ async def execute_tool_call(
     call: ToolCall,
 ) -> ToolResult:
     """Execute one model-issued tool call and normalize its result."""
-    tool = registry.get(call.name)
-
     try:
+        tool = registry.get(call.name)
         content = await tool.execute(call.arguments)
     except Exception as exc:
         return ToolResult(
