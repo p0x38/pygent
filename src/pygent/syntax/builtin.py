@@ -40,16 +40,9 @@ class CommandHandler(SyntaxHandler):
         context: SyntaxContext,
     ) -> SyntaxResult:
         """Return the command as structured metadata."""
-        parts = value.split(maxsplit=1)
-        command = parts[0]
-        arguments = parts[1] if len(parts) > 1 else ""
         return SyntaxResult(
             text="",
-            metadata={
-                "type": "command",
-                "command": command,
-                "arguments": arguments,
-            },
+            metadata={"type": "command", "command": value},
         )
 
 
