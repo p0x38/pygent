@@ -25,7 +25,7 @@ class AgentLoop:
 
     async def run(self, messages: list[Message]) -> ModelResponse:
         """Run until the model produces a response without tool calls."""
-        for iteration in range(1, self.max_iterations + 1):
+        for _iteration in range(1, self.max_iterations + 1):
             response = await self.provider.complete(
                 messages,
                 tools=self.tools.definitions(),
@@ -55,5 +55,5 @@ class AgentLoop:
 
         raise AgentLoopError(
             f"Agent loop exceeded maximum iterations ({self.max_iterations})",
-            iterations=iteration,
+            iterations=self.max_iterations,
         )
