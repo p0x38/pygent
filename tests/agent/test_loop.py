@@ -88,6 +88,30 @@ async def test_executes_tool_and_continues() -> None:
 
 
 @pytest.mark.asyncio
+async def test_executes_multiple_tool_calls() -> None:
+    calls = [
+        ToolCall(id="call-1", name="echo", arguments={"value": "one"}),
+        ToolCall(id="call-2", name="echo", arguments={"value": "two"}),
+    ]
+    provider = FakeProvider(
+        [ModelResponse(tool_calls=calls), ModelResponse(content="done")]
+    )
+    tools = ToolRegistry()
+    tools.register(EchoTool())
+    loop = AgentLoop(provider, tools)
+    messages = [Message(role="user", content="echo both")]
+
+    response = await loop.run(messages)
+
+    assert response.content == "done"
+    assert [message.content for message in messages[-2:]] == ["one", "two"]
+    assert [message.tool_call_id for message in messages[-2:]] == [
+        "call-1",
+        "call-2",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_tool_failure_is_returned_to_model() -> None:
     call = ToolCall(id="call-1", name="fail")
     provider = FakeProvider(
@@ -116,8 +140,11 @@ async def test_unknown_tool_is_returned_to_model() -> None:
     loop = AgentLoop(provider)
     messages = [Message(role="user", content="use missing")]
 
-    with pytest.raises(KeyError):
-        await loop.run(messages)
+    response = await loop.run(messages)
+
+    assert response.content == "done"
+    assert messages[-1].content == "Unknown tool: missing"
+    assert messages[-1].tool_call_id == "call-1"
 
 
 @pytest.mark.asyncio
