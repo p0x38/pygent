@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
@@ -36,7 +36,7 @@ class EchoTool(Tool):
             parameters={"type": "object"},
         )
 
-    async def execute(self, arguments: dict[str, Any]) -> Any:
+    async def execute(self, arguments: Mapping[str, Any]) -> Any:
         return arguments["value"]
 
 
@@ -48,7 +48,7 @@ class FailingTool(Tool):
             description="Always fails.",
         )
 
-    async def execute(self, arguments: dict[str, Any]) -> Any:
+    async def execute(self, arguments: Mapping[str, Any]) -> Any:
         raise ValueError("boom")
 
 
@@ -82,6 +82,7 @@ async def test_executes_tool_and_continues() -> None:
 
     assert response.content == "The tool said world."
     assert len(provider.calls) == 2
+    assert provider.calls[0][1] == [tools.get("echo").definition]
     assert messages[-1].role == "tool"
     assert messages[-1].content == "world"
     assert messages[-1].tool_call_id == "call-1"
