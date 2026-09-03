@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from importlib.metadata import EntryPoint
 
-from pygent.syntax import SyntaxRegistry, load_syntax_plugins
+from pygent.syntax import (
+    SyntaxContext,
+    SyntaxHandler,
+    SyntaxRegistry,
+    SyntaxResult,
+    load_syntax_plugins,
+)
 
 
 class ExamplePlugin:
@@ -10,12 +16,16 @@ class ExamplePlugin:
         registry.register(ExampleHandler())
 
 
-class ExampleHandler:
+class ExampleHandler(SyntaxHandler):
     name = "example"
     prefix = "#"
 
-    async def handle(self, value: str, context: object):
-        raise NotImplementedError
+    async def handle(
+        self,
+        value: str,
+        context: SyntaxContext,
+    ) -> SyntaxResult:
+        return SyntaxResult(text=value)
 
 
 def test_load_syntax_plugins_from_entry_points() -> None:
