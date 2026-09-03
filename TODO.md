@@ -9,19 +9,21 @@
 - [x] Tool execution error handling
 - [x] GitHub Actions test workflow
 - [x] GitHub Actions lint/type-check workflow
+- [x] Ollama provider foundation
+- [x] Ollama provider tests
+- [x] Fix tool type variance in tests
 
 ## Work in progress
 
 - [x] Core foundation
 - [ ] Verify CI passes on PR #2
-- [ ] Fix CI failures
+- [ ] Fix remaining CI failures
 - [ ] Improve agent context integration
-- [ ] Add multiple-tool-call tests
+- [x] Add multiple-tool-call tests
 - [ ] Add provider contract tests
 
 ## Planned
 
-- [ ] Ollama provider
 - [ ] OpenAI-compatible provider
 - [ ] OpenRouter provider
 - [ ] Routing and fallback strategies
