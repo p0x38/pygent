@@ -2,20 +2,30 @@ from __future__ import annotations
 
 from importlib.metadata import EntryPoint
 
-from pygent.syntax import SyntaxRegistry, load_syntax_plugins
+from pygent.syntax import (
+    SyntaxContext,
+    SyntaxHandler,
+    SyntaxRegistry,
+    SyntaxResult,
+    load_syntax_plugins,
+)
 
 
 class ExamplePlugin:
     def register_syntax(self, registry: SyntaxRegistry) -> None:
-        registry.register(_ExampleHandler())
+        registry.register(ExampleHandler())
 
 
-class _ExampleHandler:
+class ExampleHandler(SyntaxHandler):
     name = "example"
     prefix = "#"
 
-    async def handle(self, value, context):
-        raise NotImplementedError
+    async def handle(
+        self,
+        value: str,
+        context: SyntaxContext,
+    ) -> SyntaxResult:
+        return SyntaxResult(text=value)
 
 
 def test_load_syntax_plugins_from_entry_points() -> None:
