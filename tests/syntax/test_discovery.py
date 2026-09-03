@@ -9,6 +9,13 @@ from pygent.syntax import (
 )
 
 
+class FakeEntryPoint:
+    name = "example"
+
+    def load(self) -> ExamplePlugin:
+        return ExamplePlugin()
+
+
 class ExamplePlugin:
     def register_syntax(self, registry: SyntaxRegistry) -> None:
         registry.register(ExampleHandler())
@@ -41,6 +48,7 @@ def test_load_syntax_plugins_from_entry_points() -> None:
 
     assert len(loaded) == 1
     assert isinstance(loaded[0], ExamplePlugin)
+
     handler = registry.get("#")
     assert handler is not None
     assert handler.name == "example"

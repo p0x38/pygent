@@ -135,7 +135,9 @@ async def _chat(provider: str, model: str) -> None:
                     console.print(f"[red]Syntax error:[/red] {exc}")
                     continue
 
-                console.print("[dim]Syntax configuration updated for this session.[/dim]")
+                console.print(
+                    "[dim]Syntax configuration updated for this session.[/dim]"
+                )
                 continue
 
         if not syntax_session.config.enabled:

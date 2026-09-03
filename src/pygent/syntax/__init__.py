@@ -19,9 +19,9 @@ from pygent.syntax.registry import SyntaxRegistry
 from pygent.syntax.session import SyntaxSession
 
 __all__ = [
+    "ENTRY_POINT_GROUP",
     "BuiltinSyntaxPlugin",
     "CommandHandler",
-    "ENTRY_POINT_GROUP",
     "MentionHandler",
     "ParsedInput",
     "ProcessedInput",
