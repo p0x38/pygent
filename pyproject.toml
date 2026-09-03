@@ -34,13 +34,22 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.28.1",
-    "platformdirs>=4.0.0",
+    "platformdirs>=4.11.7",
     "pydantic>=2.13.5",
 ]
+
+[project.urls]
+Homepage = "https://github.com/p0x38/pygent"
+Repository = "https://github.com/p0x38/pygent"
+Issues = "https://github.com/p0x38/pygent/issues"
+
+[project.scripts]
+pygent = "pygent.cli:main"
 
 [project.optional-dependencies]
 ollama = ["ollama>=0.6.2"]
 dotenv = ["python-dotenv>=1.0.1"]
+cli = ["click>=8.3.1", "rich>=14.0.0"]
 
 [dependency-groups]
 dev = [
@@ -53,11 +62,6 @@ docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.6",
 ]
-
-[project.urls]
-Homepage = "https://github.com/p0x38/pygent"
-Repository = "https://github.com/p0x38/pygent"
-Issues = "https://github.com/p0x38/pygent/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pygent"]
@@ -81,6 +85,7 @@ select = [
     "SIM",
     "RUF",
 ]
+preview = true
 
 [tool.ruff.format]
 quote-style = "double"
