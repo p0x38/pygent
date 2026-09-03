@@ -7,7 +7,7 @@ import pytest
 
 from pygent.agent import Agent
 from pygent.providers.base import Provider
-from pygent.types import Message, ModelResponse
+from pygent.types import Message, ModelResponse, ToolDefinition
 
 
 class BlockingProvider(Provider):
@@ -20,7 +20,7 @@ class BlockingProvider(Provider):
         self,
         messages: Sequence[Message],
         *,
-        tools=(),
+        tools: Sequence[ToolDefinition] = (),
     ) -> ModelResponse:
         self.started += 1
         self.active += 1
@@ -33,11 +33,11 @@ class BlockingProvider(Provider):
 
 
 @pytest.mark.asyncio
-async def test_concurrent_runs_are_serialized() -> None:
+async def test_concurrent_runs_are_allowed() -> None:
     provider = BlockingProvider()
     agent = Agent(provider)
 
     await asyncio.gather(agent.run("one"), agent.run("two"))
 
     assert provider.started == 2
-    assert provider.max_active == 1
+    assert provider.max_active == 2
