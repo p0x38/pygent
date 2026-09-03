@@ -16,7 +16,7 @@ async def execute_tool_call(
     try:
         tool = registry.get(call.name)
         tool.definition.validate_arguments(call.arguments)
-        content = await tool.execute(call.arguments, context=context)
+        content = await tool.execute_with_timeout(call.arguments, context=context)
     except KeyError as exc:
         return ToolResult(
             tool_call_id=call.id,
