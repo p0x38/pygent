@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
+from pygent.exceptions import AgentLoopError
 from pygent.providers.base import Provider
 from pygent.tools.calls import execute_tool_call
 from pygent.tools.registry import ToolRegistry
@@ -26,7 +25,7 @@ class AgentLoop:
 
     async def run(self, messages: list[Message]) -> ModelResponse:
         """Run until the model produces a response without tool calls."""
-        for _ in range(self.max_iterations):
+        for iteration in range(1, self.max_iterations + 1):
             response = await self.provider.complete(
                 messages,
                 tools=self.tools.definitions(),
@@ -44,21 +43,17 @@ class AgentLoop:
             )
 
             for call in response.tool_calls:
-                try:
-                    result = await execute_tool_call(self.tools, call)
-                    content = str(result)
-                except Exception as exc:
-                    content = f"Tool execution failed: {exc}"
-
+                result = await execute_tool_call(self.tools, call)
                 messages.append(
                     Message(
                         role="tool",
-                        content=content,
-                        tool_call_id=call.id,
-                        name=call.name,
+                        content=str(result.content),
+                        tool_call_id=result.tool_call_id,
+                        name=result.name,
                     )
                 )
 
-        raise RuntimeError(
-            f"Agent loop exceeded maximum iterations ({self.max_iterations})"
+        raise AgentLoopError(
+            f"Agent loop exceeded maximum iterations ({self.max_iterations})",
+            iterations=iteration,
         )
