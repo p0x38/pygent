@@ -96,9 +96,7 @@ class ToolDefinition(BaseModel):
         if schema.get("additionalProperties") is False:
             unknown = [name for name in arguments if name not in properties]
             if unknown:
-                raise ValueError(
-                    f"unexpected arguments: {', '.join(sorted(unknown))}"
-                )
+                raise ValueError(f"unexpected arguments: {', '.join(sorted(unknown))}")
 
         for name, value in arguments.items():
             property_schema = properties.get(name)

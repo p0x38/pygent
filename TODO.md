@@ -8,7 +8,7 @@
 - [x] Tool abstraction and registry
 - [x] Tool execution error handling
 - [x] Tool argument validation
-- [x] Tool JSON Schema structure validation
+- [x] Tool JSON Schema validation with Pydantic
 - [x] GitHub Actions test workflow
 - [x] GitHub Actions lint/type-check workflow
 - [x] Ollama provider foundation
@@ -16,7 +16,6 @@
 - [x] Fix tool type variance in tests
 - [x] Add multiple-tool-call tests
 - [x] Improve agent context integration
-- [x] Add repository agent/development guidance
 
 ## Work in progress
 
