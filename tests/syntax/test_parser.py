@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from pygent.syntax import SyntaxHandler, SyntaxParser, SyntaxRegistry
+from pygent.syntax import SyntaxContext, SyntaxHandler, SyntaxParser, SyntaxRegistry
+from pygent.syntax.base import SyntaxResult
 
 
 class MentionSyntax(SyntaxHandler):
     name = "mention"
     prefix = "@"
 
-    async def handle(self, value, context):
+    async def handle(
+        self,
+        value: str,
+        context: SyntaxContext,
+    ) -> SyntaxResult:
         raise NotImplementedError
 
 
@@ -15,7 +20,11 @@ class CommandSyntax(SyntaxHandler):
     name = "command"
     prefix = "/"
 
-    async def handle(self, value, context):
+    async def handle(
+        self,
+        value: str,
+        context: SyntaxContext,
+    ) -> SyntaxResult:
         raise NotImplementedError
 
 
@@ -23,7 +32,11 @@ class DoubleArrowSyntax(SyntaxHandler):
     name = "double-arrow"
     prefix = ">>"
 
-    async def handle(self, value, context):
+    async def handle(
+        self,
+        value: str,
+        context: SyntaxContext,
+    ) -> SyntaxResult:
         raise NotImplementedError
 
 
