@@ -64,7 +64,7 @@ def _build_agent(provider_name: str) -> Agent:
 
 
 async def _repl(agent: Agent) -> None:
-    print("Pygent CLI — type /quit to exit, /reset to clear memory.")
+    print("Pygent CLI - type /quit to exit, /reset to clear memory.")
     while True:
         try:
             line = input("> ")
