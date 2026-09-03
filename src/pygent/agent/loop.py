@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+import asyncio
+
+from pygent.agent.context import AgentContext
+from pygent.exceptions import AgentLoopError
+from pygent.providers.base import Provider
+from pygent.tools.calls import execute_tool_call
+from pygent.tools.registry import ToolRegistry
+from pygent.types import Message, ModelResponse
+
+
+class AgentLoop:
+    """Run the model/tool interaction loop for an agent."""
+
+    def __init__(
+        self,
+        provider: Provider,
+        tools: ToolRegistry | None = None,
+        *,
+        max_iterations: int = 8,
+    ) -> None:
+        if max_iterations < 1:
+            raise ValueError("max_iterations must be at least 1")
+        self.provider = provider
+        self.tools = tools or ToolRegistry()
+        self.max_iterations = max_iterations
+
+    async def run(
+        self,
+        messages: list[Message],
+        *,
+        context: AgentContext | None = None,
+    ) -> ModelResponse:
+        """Run until the model produces a response without tool calls."""
+        for _iteration in range(1, self.max_iterations + 1):
+            response = await self.provider.complete(
+                messages,
+                tools=self.tools.definitions(),
+            )
+
+            if not response.tool_calls:
+                return response
+
+            messages.append(
+                Message(
+                    role="assistant",
+                    content=response.content,
+                    tool_calls=response.tool_calls,
+                )
+            )
+
+            results = await asyncio.gather(
+                *(
+                    execute_tool_call(self.tools, call, context=context)
+                    for call in response.tool_calls
+                )
+            )
+            messages.extend(
+                Message(
+                    role="tool",
+                    content=str(result.content),
+                    tool_call_id=result.tool_call_id,
+                    name=result.name,
+                )
+                for result in results
+            )
+
+        raise AgentLoopError(
+            f"Agent loop exceeded maximum iterations ({self.max_iterations})",
+            iterations=self.max_iterations,
+        )
