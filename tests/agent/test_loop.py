@@ -44,7 +44,9 @@ class EchoTool(Tool):
         *,
         context: AgentContext | None = None,
     ) -> Any:
-        return arguments["value"] if context is None else context.metadata["prefix"] + arguments["value"]
+        if context is None:
+            return arguments["value"]
+        return context.metadata["prefix"] + arguments["value"]
 
 
 class FailingTool(Tool):
@@ -86,6 +88,29 @@ class SlowTool(Tool):
             return arguments["value"]
         finally:
             self.active -= 1
+
+
+class RequiredTool(Tool):
+    @property
+    def definition(self) -> ToolDefinition:
+        return ToolDefinition(
+            name="required",
+            description="Requires a string value.",
+            parameters={
+                "type": "object",
+                "properties": {"value": {"type": "string"}},
+                "required": ["value"],
+                "additionalProperties": False,
+            },
+        )
+
+    async def execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        context: AgentContext | None = None,
+    ) -> Any:
+        return arguments["value"]
 
 
 @pytest.mark.asyncio
@@ -185,6 +210,24 @@ async def test_tool_failure_is_returned_to_model() -> None:
 
     assert response.content == "I could not run it."
     assert messages[-1].content == "boom"
+
+
+@pytest.mark.asyncio
+async def test_invalid_tool_arguments_are_returned_to_model() -> None:
+    call = ToolCall(id="call-1", name="required", arguments={})
+    provider = FakeProvider(
+        [ModelResponse(tool_calls=[call]), ModelResponse(content="invalid")]
+    )
+    tools = ToolRegistry()
+    tools.register(RequiredTool())
+    loop = AgentLoop(provider, tools)
+    messages = [Message(role="user", content="run it")]
+
+    response = await loop.run(messages)
+
+    assert response.content == "invalid"
+    assert messages[-1].content == "missing required arguments: value"
+    assert messages[-1].tool_call_id == "call-1"
 
 
 @pytest.mark.asyncio
