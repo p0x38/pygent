@@ -27,18 +27,13 @@ class ParsedInput:
 
 
 class SyntaxParser:
-    """Parse registered syntax without knowing what individual handlers do."""
+    """Parse registered syntax without knowing what handlers do."""
 
     def __init__(self, registry: SyntaxRegistry) -> None:
         self.registry = registry
 
     def parse(self, text: str) -> ParsedInput:
-        """Parse syntax expressions from ``text``.
-
-        A syntax expression starts at a token boundary. Its value continues
-        until the next whitespace character. Handlers may impose additional
-        restrictions in their own implementation.
-        """
+        """Parse registered syntax expressions at token boundaries."""
         invocations: list[SyntaxInvocation] = []
         spans: list[tuple[int, int]] = []
 
@@ -46,15 +41,15 @@ class SyntaxParser:
             if index and not text[index - 1].isspace():
                 continue
 
-            handler = self.registry.get(character)
+            handler = self.registry.match(text, index)
             if handler is None:
                 continue
 
-            end = index + 1
+            end = index + len(handler.prefix)
             while end < len(text) and not text[end].isspace():
                 end += 1
 
-            value = text[index + 1 : end]
+            value = text[index + len(handler.prefix) : end]
             if not value:
                 continue
 
