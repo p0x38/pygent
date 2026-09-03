@@ -7,13 +7,9 @@ import click
 
 from pygent import Agent
 from pygent.agent import AgentContext
+from pygent.config import load_config
 from pygent.memory import ConversationMemory
-from pygent.syntax import (
-    SyntaxContext,
-    SyntaxProcessor,
-    create_builtin_syntax_registry,
-    load_syntax_plugins,
-)
+from pygent.syntax import SyntaxContext, SyntaxSession
 
 from ...config import get_default_model, get_default_provider
 from ...providers.base import Provider
@@ -34,12 +30,21 @@ def _create_provider(provider: str, model: str) -> Provider:
     raise click.ClickException(f"Unsupported provider: {provider}")
 
 
+def _show_syntax_help() -> None:
+    console.print(
+        "/syntax on              Enable syntax\n"
+        "/syntax off             Disable syntax\n"
+        "/syntax mention <p>    Set the mention prefix\n"
+        "/syntax command <p>    Set the command prefix\n"
+        "/syntax reset           Restore default prefixes\n"
+        "/syntax                Show this help"
+    )
+
+
 async def _chat(provider: str, model: str) -> None:
     llm = _create_provider(provider, model)
     memory = ConversationMemory(conversation_id="cli")
-    registry = create_builtin_syntax_registry()
-    load_syntax_plugins(registry)
-    syntax = SyntaxProcessor(registry)
+    syntax_session = SyntaxSession(load_config().chat.syntax)
 
     agent = Agent(
         llm,
@@ -68,23 +73,32 @@ async def _chat(provider: str, model: str) -> None:
         if not prompt:
             continue
 
-        try:
-            processed = await syntax.process(prompt, context=SyntaxContext())
-        except Exception as exc:
-            console.print(f"[red]Syntax error:[/red] {exc}")
-            continue
+        if not syntax_session.config.enabled and prompt.startswith("/syntax"):
+            command_text = prompt[len("/syntax") :].strip()
+            command = {"command": "syntax", "arguments": command_text}
+        else:
+            try:
+                processed = await syntax_session.processor().process(
+                    prompt,
+                    context=SyntaxContext(),
+                )
+            except Exception as exc:
+                console.print(f"[red]Syntax error:[/red] {exc}")
+                continue
 
-        command: dict[str, Any] | None = next(
-            (
-                result.metadata
-                for result in processed.results
-                if result.metadata.get("type") == "command"
-            ),
-            None,
-        )
+            command = next(
+                (
+                    result.metadata
+                    for result in processed.results
+                    if result.metadata.get("type") == "command"
+                ),
+                None,
+            )
 
         if command is not None:
             name = str(command.get("command", ""))
+            arguments = str(command.get("arguments", "")).strip()
+
             if name in {"exit", "quit"}:
                 break
             if name == "clear":
@@ -92,19 +106,45 @@ async def _chat(provider: str, model: str) -> None:
                 console.print("[dim]Conversation cleared.[/dim]")
                 continue
             if name == "help":
-                console.print(
-                    "/clear  Clear conversation history\n"
-                    "/exit   Exit the chat\n"
-                    "/quit   Exit the chat"
-                )
+                _show_syntax_help()
+                continue
+            if name == "syntax":
+                parts = arguments.split(maxsplit=1)
+                action = parts[0].lower() if parts else "help"
+                value = parts[1] if len(parts) > 1 else ""
+
+                try:
+                    if action == "on":
+                        syntax_session.set_enabled(True)
+                    elif action == "off":
+                        syntax_session.set_enabled(False)
+                    elif action in {"mention", "command"} and value:
+                        syntax_session.set_prefix(action, value)
+                    elif action == "reset":
+                        syntax_session.reset()
+                    else:
+                        _show_syntax_help()
+                        continue
+                except ValueError as exc:
+                    console.print(f"[red]Syntax error:[/red] {exc}")
+                    continue
+
+                console.print("[dim]Syntax configuration updated for this session.[/dim]")
                 continue
 
-        if not processed.text:
+        if not syntax_session.config.enabled:
+            processed_text = prompt
+            metadata: dict[str, Any] = {}
+        else:
+            processed_text = processed.text
+            metadata = processed.metadata
+
+        if not processed_text:
             continue
 
         try:
-            context = AgentContext(metadata=processed.metadata)
-            response = await agent.run(processed.text, context=context)
+            context = AgentContext(metadata=metadata)
+            response = await agent.run(processed_text, context=context)
         except Exception as exc:
             console.print(f"[red]Error:[/red] {exc}")
             continue

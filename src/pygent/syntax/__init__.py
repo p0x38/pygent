@@ -16,6 +16,7 @@ from pygent.syntax.parser import ParsedInput, SyntaxInvocation, SyntaxParser
 from pygent.syntax.plugins import SyntaxPlugin, inject_syntax_plugin
 from pygent.syntax.processor import ProcessedInput, SyntaxProcessor
 from pygent.syntax.registry import SyntaxRegistry
+from pygent.syntax.session import SyntaxSession
 
 __all__ = [
     "BuiltinSyntaxPlugin",
@@ -32,6 +33,7 @@ __all__ = [
     "SyntaxProcessor",
     "SyntaxRegistry",
     "SyntaxResult",
+    "SyntaxSession",
     "create_builtin_syntax_registry",
     "discover_syntax_plugins",
     "inject_syntax_plugin",
