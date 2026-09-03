@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from importlib.metadata import EntryPoint
-
 from pygent.syntax import (
     SyntaxContext,
     SyntaxHandler,
@@ -9,6 +7,13 @@ from pygent.syntax import (
     SyntaxResult,
     load_syntax_plugins,
 )
+
+
+class FakeEntryPoint:
+    name = "example"
+
+    def load(self) -> ExamplePlugin:
+        return ExamplePlugin()
 
 
 class ExamplePlugin:
@@ -29,15 +34,14 @@ class ExampleHandler(SyntaxHandler):
 
 
 def test_load_syntax_plugins_from_entry_points() -> None:
-    entry_point = EntryPoint(
-        name="example",
-        value="tests.syntax.test_discovery:ExamplePlugin",
-        group="pygent.syntax",
-    )
+    entry_point = FakeEntryPoint()
 
     registry = SyntaxRegistry()
     loaded = load_syntax_plugins(registry, plugins=[entry_point])
 
     assert len(loaded) == 1
     assert isinstance(loaded[0], ExamplePlugin)
-    assert registry.get("#").name == "example"
+
+    handler = registry.get("#")
+    assert handler is not None
+    assert handler.name == "example"

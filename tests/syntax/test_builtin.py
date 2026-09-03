@@ -31,6 +31,7 @@ async def test_command_handler() -> None:
     assert result.metadata == {
         "type": "command",
         "command": "help",
+        "arguments": "",
     }
 
 
@@ -57,3 +58,14 @@ def test_builtin_plugin_accepts_custom_prefixes() -> None:
     assert command is not None
     assert mention.name == "mention"
     assert command.name == "command"
+
+
+@pytest.mark.asyncio
+async def test_command_handler_with_arguments() -> None:
+    result = await CommandHandler().handle("model qwen2.5-coder:3b", SyntaxContext())
+
+    assert result.metadata == {
+        "type": "command",
+        "command": "model",
+        "arguments": "qwen2.5-coder:3b",
+    }
