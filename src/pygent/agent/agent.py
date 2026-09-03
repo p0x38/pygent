@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pygent.agent.context import AgentContext
+from pygent.agent.loop import AgentLoop
 from pygent.agent.messages import user_message
 from pygent.providers.base import Provider
-from pygent.types import Message
+from pygent.tools.registry import ToolRegistry
 
 
 @dataclass(slots=True)
@@ -18,8 +19,18 @@ class AgentResponse:
 class Agent:
     """High-level entry point for running an AI agent."""
 
-    def __init__(self, provider: Provider) -> None:
-        self.provider = provider
+    def __init__(
+        self,
+        provider: Provider,
+        *,
+        tools: ToolRegistry | None = None,
+        max_iterations: int = 8,
+    ) -> None:
+        self.loop = AgentLoop(
+            provider,
+            tools,
+            max_iterations=max_iterations,
+        )
 
     async def run(
         self,
@@ -28,7 +39,6 @@ class Agent:
         context: AgentContext | None = None,
     ) -> AgentResponse:
         """Run the agent for a single prompt."""
-        del context  # Reserved for tool execution and middleware.
-        messages: list[Message] = [user_message(prompt)]
-        response = await self.provider.complete(messages)
+        del context  # Passed to tools once contextual tool execution is added.
+        response = await self.loop.run([user_message(prompt)])
         return AgentResponse(text=response.content or "")
