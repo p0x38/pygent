@@ -37,8 +37,12 @@ async def test_command_handler() -> None:
 def test_builtin_plugin_uses_default_prefixes() -> None:
     registry = create_builtin_syntax_registry()
 
-    assert registry.get("@").name == "mention"
-    assert registry.get("/").name == "command"
+    mention = registry.get("@")
+    command = registry.get("/")
+    assert mention is not None
+    assert command is not None
+    assert mention.name == "mention"
+    assert command.name == "command"
 
 
 def test_builtin_plugin_accepts_custom_prefixes() -> None:
@@ -47,5 +51,9 @@ def test_builtin_plugin_accepts_custom_prefixes() -> None:
         command_prefix="!",
     )
 
-    assert registry.get("::").name == "mention"
-    assert registry.get("!").name == "command"
+    mention = registry.get("::")
+    command = registry.get("!")
+    assert mention is not None
+    assert command is not None
+    assert mention.name == "mention"
+    assert command.name == "command"
