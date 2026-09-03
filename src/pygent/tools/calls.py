@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pygent.agent.context import AgentContext
 from pygent.tools.registry import ToolRegistry
 from pygent.tools.result import ToolResult
 from pygent.types import ToolCall
@@ -8,11 +9,13 @@ from pygent.types import ToolCall
 async def execute_tool_call(
     registry: ToolRegistry,
     call: ToolCall,
+    *,
+    context: AgentContext | None = None,
 ) -> ToolResult:
     """Execute one model-issued tool call and normalize its result."""
     try:
         tool = registry.get(call.name)
-        content = await tool.execute(call.arguments)
+        content = await tool.execute(call.arguments, context=context)
     except KeyError as exc:
         return ToolResult(
             tool_call_id=call.id,
