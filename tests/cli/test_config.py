@@ -153,7 +153,7 @@ def test_config_init(tmp_path, monkeypatch) -> None:
 
     content = path.read_text(encoding="utf-8")
 
-    assert '[default]' in content
+    assert "[default]" in content
     assert 'provider = "ollama"' in content
     assert 'model = "qwen2.5-coder:3b"' in content
 

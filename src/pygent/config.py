@@ -27,10 +27,25 @@ _LOAD_ERROR: Exception | None = None
 
 
 class DefaultConfig(BaseModel):
-    """Default settings for Pygent."""
+    """Default provider settings."""
 
     provider: str = "ollama"
     model: str = "qwen2.5-coder:3b"
+
+
+class SyntaxConfig(BaseModel):
+    """Configuration for conversational syntax."""
+
+    enabled: bool = True
+    prefixes: dict[str, str] = Field(
+        default_factory=lambda: {"mention": "@", "command": "/"}
+    )
+
+
+class ChatConfig(BaseModel):
+    """Interactive chat configuration."""
+
+    syntax: SyntaxConfig = Field(default_factory=SyntaxConfig)
 
 
 class Config(BaseModel):
@@ -39,6 +54,7 @@ class Config(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     default: DefaultConfig = Field(default_factory=DefaultConfig)
+    chat: ChatConfig = Field(default_factory=ChatConfig)
 
 
 def _ensure_loaded() -> None:
@@ -51,7 +67,8 @@ def _ensure_loaded() -> None:
     _LOADED = True
 
     try:
-        from dotenv import find_dotenv, load_dotenv
+        from dotenv import find_dotenv
+        from dotenv import load_dotenv as _load_dotenv
     except ImportError as exc:
         _LOAD_ERROR = exc
         return
@@ -62,7 +79,7 @@ def _ensure_loaded() -> None:
         return
 
     if env_path:
-        load_dotenv(env_path, override=False)
+        _load_dotenv(env_path, override=False)
 
 
 def load_dotenv(*, path: str | Path | None = None) -> bool:
@@ -74,15 +91,14 @@ def load_dotenv(*, path: str | Path | None = None) -> bool:
     global _LOADED, _LOAD_ERROR
 
     if path is not None:
-        _LOADED = False
-        _ensure_loaded()
-
         try:
             from dotenv import load_dotenv as _load
         except ImportError as exc:
             _LOAD_ERROR = exc
             return False
 
+        _LOADED = True
+        _LOAD_ERROR = None
         return bool(_load(Path(path), override=False))
 
     _ensure_loaded()
@@ -148,6 +164,13 @@ def init_config(*, force: bool = False) -> Path:
 [default]
 provider = "ollama"
 model = "qwen2.5-coder:3b"
+
+[chat.syntax]
+enabled = true
+
+[chat.syntax.prefixes]
+mention = "@"
+command = "/"
 """,
         encoding="utf-8",
     )
@@ -178,8 +201,10 @@ def get_default_model() -> str:
 
 
 __all__ = [
+    "ChatConfig",
     "Config",
     "DefaultConfig",
+    "SyntaxConfig",
     "config_dir",
     "config_path",
     "get_default_model",
