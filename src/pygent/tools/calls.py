@@ -15,6 +15,7 @@ async def execute_tool_call(
     """Execute one model-issued tool call and normalize its result."""
     try:
         tool = registry.get(call.name)
+        tool.definition.validate_arguments(call.arguments)
         content = await tool.execute(call.arguments, context=context)
     except KeyError as exc:
         return ToolResult(
