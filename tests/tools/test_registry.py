@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import pytest
@@ -19,7 +20,7 @@ class DummyTool(Tool):
     def definition(self) -> ToolDefinition:
         return self._definition
 
-    async def execute(self, arguments: dict[str, Any]) -> Any:
+    async def execute(self, arguments: Mapping[str, Any]) -> Any:
         return arguments
 
 
