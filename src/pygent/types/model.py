@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from pygent.types.usage import Usage
 
 Role = Literal["system", "user", "assistant", "tool"]
 
@@ -38,3 +39,4 @@ class ModelResponse(BaseModel):
     content: str | None = None
     tool_calls: list[ToolCall] = Field(default_factory=list)
     finish_reason: str | None = None
+    usage: Usage | None = None
