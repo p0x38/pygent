@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 
 from pygent.agent.context import AgentContext
+from pygent.agent.events import AgentEvent
 from pygent.exceptions import AgentLoopError
 from pygent.providers.base import Provider
 from pygent.tools.calls import execute_tool_call
@@ -19,12 +21,36 @@ class AgentLoop:
         tools: ToolRegistry | None = None,
         *,
         max_iterations: int = 8,
+        max_tool_calls: int | None = None,
+        total_timeout: float | None = None,
     ) -> None:
         if max_iterations < 1:
             raise ValueError("max_iterations must be at least 1")
+        if max_tool_calls is not None and max_tool_calls < 1:
+            raise ValueError("max_tool_calls must be at least 1 when set")
+        if total_timeout is not None and total_timeout <= 0:
+            raise ValueError("total_timeout must be positive when set")
         self.provider = provider
         self.tools = tools or ToolRegistry()
         self.max_iterations = max_iterations
+        self.max_tool_calls = max_tool_calls
+        self.total_timeout = total_timeout
+
+    def _too_many_tool_calls(self, count: int) -> bool:
+        return self.max_tool_calls is not None and count >= self.max_tool_calls
+
+    async def _provider_call(
+        self,
+        messages: list[Message],
+    ) -> ModelResponse:
+        if self.total_timeout is None:
+            return await self.provider.complete(
+                messages, tools=self.tools.definitions()
+            )
+        return await asyncio.wait_for(
+            self.provider.complete(messages, tools=self.tools.definitions()),
+            timeout=self.total_timeout,
+        )
 
     async def run(
         self,
@@ -33,14 +59,19 @@ class AgentLoop:
         context: AgentContext | None = None,
     ) -> ModelResponse:
         """Run until the model produces a response without tool calls."""
+        tool_call_count = 0
         for _iteration in range(1, self.max_iterations + 1):
-            response = await self.provider.complete(
-                messages,
-                tools=self.tools.definitions(),
-            )
+            response = await self._provider_call(messages)
 
             if not response.tool_calls:
                 return response
+
+            tool_call_count += len(response.tool_calls)
+            if self._too_many_tool_calls(tool_call_count):
+                raise AgentLoopError(
+                    f"Agent loop exceeded maximum tool calls ({self.max_tool_calls})",
+                    iterations=_iteration,
+                )
 
             messages.append(
                 Message(
@@ -69,4 +100,90 @@ class AgentLoop:
         raise AgentLoopError(
             f"Agent loop exceeded maximum iterations ({self.max_iterations})",
             iterations=self.max_iterations,
+        )
+
+    async def stream(
+        self,
+        messages: list[Message],
+        *,
+        context: AgentContext | None = None,
+    ) -> AsyncIterator[AgentEvent]:
+        """Stream :class:`AgentEvent` instances from a complete run."""
+        tool_call_count = 0
+        for iteration in range(1, self.max_iterations + 1):
+            yield AgentEvent(type="iteration_start", iteration=iteration)
+            try:
+                response = await self._provider_call(messages)
+            except Exception as exc:
+                yield AgentEvent(type="error", iteration=iteration, error=str(exc))
+                return
+
+            if response.content:
+                yield AgentEvent(
+                    type="text_delta",
+                    iteration=iteration,
+                    text_delta=response.content,
+                )
+
+            if not response.tool_calls:
+                yield AgentEvent(
+                    type="completion",
+                    iteration=iteration,
+                    response=response,
+                )
+                return
+
+            tool_call_count += len(response.tool_calls)
+            if self._too_many_tool_calls(tool_call_count):
+                yield AgentEvent(
+                    type="error",
+                    iteration=iteration,
+                    error=(
+                        "Agent loop exceeded maximum tool calls "
+                        f"({self.max_tool_calls})"
+                    ),
+                )
+                return
+
+            messages.append(
+                Message(
+                    role="assistant",
+                    content=response.content,
+                    tool_calls=response.tool_calls,
+                )
+            )
+
+            results = await asyncio.gather(
+                *(
+                    execute_tool_call(self.tools, call, context=context)
+                    for call in response.tool_calls
+                )
+            )
+            for call, result in zip(response.tool_calls, results, strict=False):
+                yield AgentEvent(
+                    type="tool_result",
+                    iteration=iteration,
+                    tool_call=call,
+                    tool_result={
+                        "name": result.name,
+                        "tool_call_id": result.tool_call_id,
+                        "content": result.content,
+                        "is_error": result.is_error,
+                    },
+                )
+            messages.extend(
+                Message(
+                    role="tool",
+                    content=str(result.content),
+                    tool_call_id=result.tool_call_id,
+                    name=result.name,
+                )
+                for result in results
+            )
+            yield AgentEvent(type="iteration_end", iteration=iteration)
+
+        yield AgentEvent(
+            type="error",
+            iteration=self.max_iterations,
+            error=(f"Agent loop exceeded maximum iterations ({self.max_iterations})"),
         )
