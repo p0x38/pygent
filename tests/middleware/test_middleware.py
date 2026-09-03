@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable, Sequence
 
 import pytest
 
@@ -17,7 +18,7 @@ from pygent.types import Message, ModelResponse, ToolDefinition, Usage
 
 
 class _ScriptedProvider:
-    def __init__(self, responses: list[ModelResponse], errors: list[Exception]) -> None:
+    def __init__(self, responses: list[ModelResponse], errors: Sequence[Exception]) -> None:
         self.responses = list(responses)
         self.errors = list(errors)
         self.calls = 0
@@ -141,7 +142,13 @@ async def test_chain_runs_in_order() -> None:
         def __init__(self, name: str) -> None:
             self.name = name
 
-        async def complete(self, call, messages, *, tools) -> ModelResponse:
+        async def complete(
+            self,
+            call: Callable[..., Awaitable[ModelResponse]],
+            messages: list[Message],
+            *,
+            tools: list[ToolDefinition],
+        ) -> ModelResponse:
             order.append(self.name)
             return await call(messages, tools=tools)
 
@@ -153,5 +160,5 @@ async def test_chain_runs_in_order() -> None:
     assert order == ["a", "b", "c"]
 
 
-async def _noop() -> None:  # ruff: ignore[unused-async]
+async def _noop() -> None:
     return None
