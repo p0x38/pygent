@@ -39,6 +39,5 @@ class Agent:
         context: AgentContext | None = None,
     ) -> AgentResponse:
         """Run the agent for a single prompt."""
-        del context  # Passed to tools once contextual tool execution is added.
-        response = await self.loop.run([user_message(prompt)])
+        response = await self.loop.run([user_message(prompt)], context=context)
         return AgentResponse(text=response.content or "")
