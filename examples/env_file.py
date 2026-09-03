@@ -18,13 +18,18 @@ Then run::
 from __future__ import annotations
 
 import asyncio
+import os
+from typing import Literal
 
 from pygent import load_dotenv
 from pygent.agent import Agent
 from pygent.providers import OpenAIProvider, OpenRouterProvider
+from pygent.providers.base import Provider
+
+ProviderName = Literal["openai", "openrouter"]
 
 
-def _build_provider() -> object:
+def _build_provider() -> Provider:
     # ``load_dotenv`` is safe to call even when python-dotenv is not installed.
     if not load_dotenv():
         print(
@@ -32,8 +37,8 @@ def _build_provider() -> object:
             "variables instead."
         )
 
-    openai_key = __import__("os").environ.get("OPENAI_API_KEY")
-    openrouter_key = __import__("os").environ.get("OPENROUTER_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
 
     if openai_key:
         return OpenAIProvider(model="gpt-4o-mini")

@@ -51,9 +51,8 @@ def main() -> int:
     assert "echo: how are you?" in text, text
     assert "(memory cleared)" in text, text
     assert "echo: after reset" in text, text
-    encoded = text.encode("ascii", errors="replace").decode("ascii")
     print("CLI smoke test passed:")
-    print(encoded)
+    print(text)
     return 0
 
 
