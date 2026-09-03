@@ -37,6 +37,7 @@ class DDGSSearchProvider:
 
     async def search(self, query: str, *, limit: int) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
+        assert self.client is not None
         for entry in self.client.text(query, max_results=limit):
             results.append(
                 {

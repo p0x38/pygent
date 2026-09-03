@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 import httpx
@@ -240,5 +241,5 @@ async def test_extra_body_is_merged() -> None:
 
     sent = transport.calls[0]
     payload = json.loads(sent.content)
-    assert payload["temperature"] == 0.5
+    assert math.isclose(payload["temperature"], 0.5)
     assert payload["metadata"] == {"trace": "abc"}

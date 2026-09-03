@@ -60,7 +60,7 @@ class AgentLoop:
     ) -> ModelResponse:
         """Run until the model produces a response without tool calls."""
         tool_call_count = 0
-        for _iteration in range(1, self.max_iterations + 1):
+        for iteration in range(1, self.max_iterations + 1):
             response = await self._provider_call(messages)
 
             if not response.tool_calls:
@@ -70,7 +70,7 @@ class AgentLoop:
             if self._too_many_tool_calls(tool_call_count):
                 raise AgentLoopError(
                     f"Agent loop exceeded maximum tool calls ({self.max_tool_calls})",
-                    iterations=_iteration,
+                    iterations=iteration,
                 )
 
             messages.append(

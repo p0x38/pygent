@@ -153,5 +153,5 @@ async def test_chain_runs_in_order() -> None:
     assert order == ["a", "b", "c"]
 
 
-async def _noop() -> None:
+async def _noop() -> None:  # ruff: ignore[unused-async]
     return None
