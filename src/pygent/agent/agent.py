@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
 
-
-class Provider(Protocol):
-    async def generate(self, prompt: str) -> str:
-        """Generate a response for a prompt."""
+from pygent.providers.base import Provider
 
 
 @dataclass(slots=True)
