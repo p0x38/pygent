@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from pygent.exceptions import AgentLoopError
 from pygent.providers.base import Provider
 from pygent.tools.calls import execute_tool_call
@@ -42,16 +44,18 @@ class AgentLoop:
                 )
             )
 
-            for call in response.tool_calls:
-                result = await execute_tool_call(self.tools, call)
-                messages.append(
-                    Message(
-                        role="tool",
-                        content=str(result.content),
-                        tool_call_id=result.tool_call_id,
-                        name=result.name,
-                    )
+            results = await asyncio.gather(
+                *(execute_tool_call(self.tools, call) for call in response.tool_calls)
+            )
+            messages.extend(
+                Message(
+                    role="tool",
+                    content=str(result.content),
+                    tool_call_id=result.tool_call_id,
+                    name=result.name,
                 )
+                for result in results
+            )
 
         raise AgentLoopError(
             f"Agent loop exceeded maximum iterations ({self.max_iterations})",
