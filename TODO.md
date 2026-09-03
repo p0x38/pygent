@@ -15,6 +15,7 @@
 - [x] Fix tool type variance in tests
 - [x] Add multiple-tool-call tests
 - [x] Improve agent context integration
+- [x] Add repository agent/development guidance
 
 ## Work in progress
 
