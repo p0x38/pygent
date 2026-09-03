@@ -66,3 +66,22 @@ When dependency lock state changes, also verify the lockfile with `uv lock` and 
 - Convert provider-specific errors and responses into stable Pygent types at the boundary.
 - Do not swallow unexpected errors silently; expose useful normalized tool/model failures to the agent loop.
 - Avoid speculative abstractions until a concrete feature needs them.
+
+## Project-Specific Gotchas
+
+These are non-obvious facts that an agent cannot easily infer from the directory layout or the README:
+
+- **Public API surface is intentionally narrow at the top level.** Only `Agent`, `AgentContext`, `AgentResponse`, `Message`, `ModelResponse`, `ToolCall`, `ToolDefinition`, `Usage`, `getenv`, and `load_dotenv` are re-exported from `pygent`. Everything else (`AgentLoop`, `AgentEvent`, `parse_structured_output`, `Tool`, `ToolRegistry`, `Provider`, providers, middleware, routing, skills) must be imported from its submodule. Don't add re-exports here without a deliberate API decision.
+- **`Tool.execute_with_timeout` is what the agent loop actually calls**, not `Tool.execute`. Subclasses should override `execute`; `execute_with_timeout` honours the class attribute `timeout: float | None` and converts `asyncio.TimeoutError` into `pygent.exceptions.ToolTimeoutError`.
+- **`OllamaProvider` is the only vendor-SDK-based provider.** All other providers use raw `httpx.AsyncClient.post("/chat/completions", …)`. New providers should follow the httpx pattern unless a vendor SDK offers a clear benefit.
+- **`OpenAICompatibleProvider` does not auto-inject `Authorization` headers when a caller passes their own `httpx.AsyncClient`.** Tests that stub a transport must put the `Authorization` header on the `AsyncClient` themselves. The provider also does **not** call `aclose()` on a user-supplied client (it checks `getattr(client, "_is_pygent_default", True)`).
+- **Use `pygent.config.getenv`, not `os.environ.get`, in providers.** It auto-loads a `.env` file from the current working directory (or parents) when the `python-dotenv` extra is installed, and silently falls back to `os.environ` otherwise. Existing `OPENAI_API_KEY` and `OPENROUTER_API_KEY` reads go through it.
+- **Provider exceptions are normalized in `pygent.exceptions`**: `ProviderConnectionError`, `ProviderAuthenticationError`, `ProviderRateLimitError`, `ProviderRequestError`, `ProviderResponseError`. The `OpenAICompatibleProvider` raises these on HTTP 401/403, 429, ≥400, and transport failures respectively.
+- **The agent loop runs in `AgentLoop` and is wrapped by `Agent`.** The `Agent` class adds memory integration and a typed `AgentResponse`; new orchestration features (streaming, structured output) live on `AgentLoop` first, then surface through `Agent` only when needed.
+- **`TODO.md` is significantly out of date.** Phases 1–7 and most of Phase 9 are largely implemented despite the checklist still showing them as pending. Don't trust the TODO as a source of truth for "is this done" — check the codebase. Update `TODO.md` in the same commit that changes a task's status.
+
+## Examples and Smoke Tests
+
+- `examples/` contains runnable snippets for each major feature (`basic_agent`, `cli`, `custom_tool`, `env_file`, `memory`, `middleware`, `ollama`, `openai`, `openrouter`, `routing`, `web_search`).
+- `scripts/smoke_cli.py` is a scripted-input smoke test for `examples/cli.py`; it monkey-patches `builtins.input` and runs the REPL with a fixed list of commands.
+- New public features should ship with an example under `examples/` that uses a stub provider (no network) so CI / local reviewers can copy-paste it.
