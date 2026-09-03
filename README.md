@@ -115,16 +115,19 @@ can **understand requests, choose tools, retrieve information, and produce a res
 | ------------------------ | --------------- |
 | Agent orchestration      | 🚧 Experimental |
 | Agent loop               | 🚧 Experimental |
+| Streaming events         | 🚧 Experimental |
+| Structured outputs       | 🚧 Experimental |
 | Tool calling             | 🚧 Experimental |
+| Tool timeouts            | 🚧 Experimental |
 | Ollama provider          | 🚧 Experimental |
-| OpenAI provider          | 🚧 Planned      |
-| OpenRouter provider      | 🚧 Planned      |
-| OpenAI-compatible APIs   | 🚧 Planned      |
-| Provider routing         | 🚧 Planned      |
-| Conversation memory      | 🚧 Planned      |
-| Web search               | 🚧 Planned      |
-| Browser automation       | 🚧 Planned      |
-| Middleware               | 🚧 Planned      |
+| OpenAI provider          | 🚧 Experimental |
+| OpenRouter provider      | 🚧 Experimental |
+| OpenAI-compatible APIs   | 🚧 Experimental |
+| Provider routing         | 🚧 Experimental |
+| Conversation memory      | 🚧 Experimental |
+| Web search               | 🚧 Experimental |
+| Browser automation       | 🚧 Experimental |
+| Middleware (logging, retry, timing, usage) | 🚧 Experimental |
 | Comprehensive test suite | 🚧 In progress  |
 | Stable public API        | ⏳ Not yet       |
 
@@ -332,24 +335,21 @@ release.
 
 * Provider-neutral message and tool types
 * Provider abstraction
-* Basic agent execution loop
-* Tool registry and execution
-* Ollama provider foundation
-* Automated tests and lint/type checks
+* Agent execution loop with tool calling
+* Tool registry, execution, and timeouts
+* Streaming events and structured output helpers
+* OpenAI / OpenRouter / OpenAI-compatible / Ollama providers
+* Provider routing with first-available and fallback strategies
+* Conversation memory with conversation IDs
+* Middleware: logging, retry, timing, usage tracking
+* Web search skill (DDGS) and browser skill
+* Automated tests, lint, and strict type checks
 
 ### Planned
 
-* OpenAI-compatible provider
-* OpenRouter provider
-* Provider routing and fallback
-* Conversation memory
-* Middleware
-* Web search and browser skills
-* Streaming responses
-* Structured outputs
-* Better tool argument validation
 * Python 3.13 CI coverage
-* Documentation and examples
+* Production hardening (cancellation, request timeouts)
+* Expanded examples and reference documentation
 * First alpha release
 
 ---
