@@ -39,6 +39,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ollama = ["ollama>=0.6.2"]
+dotenv = ["python-dotenv>=1.0.1"]
 
 [dependency-groups]
 dev = [
