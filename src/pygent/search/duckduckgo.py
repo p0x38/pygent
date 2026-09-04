@@ -25,14 +25,14 @@ class _ResultParser(HTMLParser):
             self._title = ""
             self._url = attributes.get("href") or ""
             self._in_title = True
-        elif tag == "a" and "result__snippet" in classes:
+        elif "result__snippet" in classes:
             self._snippet = ""
             self._in_snippet = True
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "a" and self._in_title:
             self._in_title = False
-        elif tag == "a" and self._in_snippet:
+        if self._in_snippet and tag in {"a", "div"}:
             self._in_snippet = False
             if self._title and self._url:
                 self.results.append(
@@ -66,10 +66,7 @@ class DuckDuckGoSearch(SearchProvider):
 
         url = f"{self.endpoint}?q={quote_plus(query)}"
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.get(
-                url,
-                headers={"User-Agent": "pygent/0.2"},
-            )
+            response = await client.get(url, headers={"User-Agent": "pygent/0.2"})
             response.raise_for_status()
 
         parser = _ResultParser()
