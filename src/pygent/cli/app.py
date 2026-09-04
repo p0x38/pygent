@@ -8,8 +8,15 @@ from .commands.config import config
 
 @click.group()
 @click.version_option()
-def main() -> None:
+@click.option(
+    "--locale",
+    default="en",
+    show_default=True,
+    help="Locale used for user-facing messages.",
+)
+def main(locale: str) -> None:
     """Pygent command-line interface."""
+    ...
 
 
 main.add_command(chat)

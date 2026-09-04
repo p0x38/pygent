@@ -5,7 +5,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class DefaultConfig(BaseModel):
+class ProviderConfig(BaseModel):
     """Default provider settings."""
 
     provider: str = "ollama"
@@ -35,5 +35,5 @@ class Config(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    default: DefaultConfig = Field(default_factory=DefaultConfig)
+    provider: ProviderConfig = Field(default_factory=ProviderConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)

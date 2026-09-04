@@ -1,0 +1,44 @@
+[config.section]
+default = "デフォルト"
+chat = "チャット"
+syntax = "構文"
+prefixes = "プレフィックス"
+ollama = "Ollama"
+openrouter = "OpenRouter"
+pygent = "Pygent"
+
+[config.field]
+provider = "プロバイダー"
+model = "モデル"
+enabled = "有効"
+mention = "メンション接頭辞"
+command = "コマンド接頭辞"
+keep_alive = "キープアライブ"
+llm_library = "LLMライブラリ"
+max_loaded_models = "ロード済みモデル数の上限"
+parallel_requests = "並列リクエスト数"
+vulkan = "Vulkan"
+api_key = "APIキー"
+base_url = "ベースURL"
+
+[config.value]
+not_set = "未設定"
+enabled = "有効"
+disabled = "無効"
+yes = "はい"
+no = "いいえ"
+
+[config.source]
+env = "環境変数"
+toml = "TOML"
+
+[config.unit]
+byte = "バイト"
+bytes = "バイト"
+
+[config.duration]
+zero = "0秒"
+day = "{count}日"
+hour = "{count}時間"
+minute = "{count}分"
+second = "{count}秒"

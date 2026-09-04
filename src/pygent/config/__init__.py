@@ -1,6 +1,6 @@
 """Pygent configuration package."""
 
-from .formatter import ConfigFormatter, ConsoleFormatter, TomlFormatter
+from .formatter import ConfigFormatter, ConfigLabels, ConsoleFormatter, TomlFormatter
 from .loader import (
     config_dir,
     config_path,
@@ -10,15 +10,17 @@ from .loader import (
     init_config,
     load_config,
     load_dotenv,
+    load_toml,
 )
-from .models import ChatConfig, Config, DefaultConfig, SyntaxConfig
+from .models import ChatConfig, Config, ProviderConfig, SyntaxConfig
 
 __all__ = [
     "ChatConfig",
     "Config",
     "ConfigFormatter",
+    "ConfigLabels",
     "ConsoleFormatter",
-    "DefaultConfig",
+    "ProviderConfig",
     "SyntaxConfig",
     "TomlFormatter",
     "config_dir",
@@ -29,4 +31,5 @@ __all__ = [
     "init_config",
     "load_config",
     "load_dotenv",
+    "load_toml",
 ]

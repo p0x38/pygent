@@ -5,9 +5,9 @@ from __future__ import annotations
 import os
 import tomllib
 from pathlib import Path
-from typing import Any
 
 from platformdirs import user_config_dir
+from tomlkit import dumps
 
 from .models import Config
 
@@ -16,6 +16,34 @@ _CONFIG_FILE_NAME = "config.toml"
 
 _loaded = False
 _load_error: Exception | None = None
+
+
+type TomlValue = str | int | float | bool | list["TomlValue"] | dict[str, "TomlValue"]
+
+
+def load_toml(path: str | Path | None = None) -> dict[str, TomlValue]:
+    """Load raw Pygent configuration from a TOML file.
+
+    If ``path`` is omitted, the user-level Pygent configuration path is used.
+
+    A missing configuration file returns an empty mapping.
+    """
+    config_file = Path(path) if path is not None else config_path()
+
+    if not config_file.exists():
+        return {}
+
+    try:
+        with config_file.open("rb") as file:
+            return tomllib.load(file)
+    except FileNotFoundError:
+        raise
+    except tomllib.TOMLDecodeError as exc:
+        raise ValueError(f"Invalid TOML configuration: {config_file}") from exc
+    except OSError as exc:
+        raise OSError(
+            f"Could not read configuration file: {config_file}: {exc}"
+        ) from exc
 
 
 def _ensure_loaded() -> None:
@@ -87,25 +115,8 @@ def config_path() -> Path:
 
 
 def load_config(path: str | Path | None = None) -> Config:
-    """Load Pygent configuration from a TOML file.
-
-    If ``path`` is omitted, the user-level Pygent configuration path is used.
-
-    A missing configuration file is not an error; the default configuration
-    is returned instead.
-    """
-    config_file = Path(path) if path is not None else config_path()
-
-    if not config_file.exists():
-        return Config()
-
-    try:
-        with config_file.open("rb") as file:
-            data: dict[str, Any] = tomllib.load(file)
-    except tomllib.TOMLDecodeError as exc:
-        raise ValueError(f"Invalid TOML configuration: {config_file}") from exc
-
-    return Config.model_validate(data)
+    """Load and validate Pygent configuration from a TOML file."""
+    return Config.model_validate(load_toml(path))
 
 
 def init_config(*, force: bool = False) -> Path:
@@ -123,20 +134,10 @@ def init_config(*, force: bool = False) -> Path:
 
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    config = Config()
+
     path.write_text(
-        """# Pygent configuration
-
-[default]
-provider = "ollama"
-model = "qwen2.5-coder:3b"
-
-[chat.syntax]
-enabled = true
-
-[chat.syntax.prefixes]
-mention = "@"
-command = "/"
-""",
+        dumps(config.model_dump(mode="python")),
         encoding="utf-8",
     )
 
@@ -148,7 +149,7 @@ def get_default_provider() -> str:
     return (
         getenv(
             "PYGENT_PROVIDER",
-            load_config().default.provider,
+            load_config().provider.provider,
         )
         or "ollama"
     )
@@ -159,7 +160,7 @@ def get_default_model() -> str:
     return (
         getenv(
             "PYGENT_MODEL",
-            load_config().default.model,
+            load_config().provider.model,
         )
         or "qwen2.5-coder:3b"
     )
@@ -174,4 +175,5 @@ __all__ = [
     "init_config",
     "load_config",
     "load_dotenv",
+    "load_toml",
 ]

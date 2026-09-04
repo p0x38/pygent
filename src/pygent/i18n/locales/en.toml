@@ -1,0 +1,44 @@
+[config.section]
+default = "Default"
+chat = "Chat"
+syntax = "Syntax"
+prefixes = "Prefixes"
+ollama = "Ollama"
+openrouter = "OpenRouter"
+pygent = "Pygent"
+
+[config.field]
+provider = "Provider"
+model = "Model"
+enabled = "Enabled"
+mention = "Mention prefix"
+command = "Command prefix"
+keep_alive = "Keep alive"
+llm_library = "LLM Library"
+max_loaded_models = "Max loaded models"
+parallel_requests = "Parallel requests"
+vulkan = "Vulkan"
+api_key = "API key"
+base_url = "Base URL"
+
+[config.value]
+not_set = "Not set"
+enabled = "Enabled"
+disabled = "Disabled"
+yes = "Yes"
+no = "No"
+
+[config.source]
+env = "env"
+toml = "toml"
+
+[config.unit]
+byte = "byte"
+bytes = "bytes"
+
+[config.duration]
+zero = "0 seconds"
+day = "{count} day"
+hour = "{count} hour"
+minute = "{count} minute"
+second = "{count} second"

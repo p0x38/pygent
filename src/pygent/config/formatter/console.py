@@ -4,53 +4,99 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from ...i18n.translator import Translator
 from .base import ConfigFormatter
+from .labels import ConfigLabels
+from .value import ValueFormatter, ValueStyle
+
+type TomlValue = str | int | float | bool | list["TomlValue"] | dict[str, "TomlValue"]
 
 
 class ConsoleFormatter(ConfigFormatter):
     """Format configuration for human-readable terminal output."""
 
-    @staticmethod
-    def _source_suffix(from_config: bool) -> str:
-        """Return a suffix describing the configuration source."""
-        return " (via config file)" if from_config else ""
+    def __init__(self, translator: Translator) -> None:
+        self._translator = translator
+        self._labels = ConfigLabels(translator)
+        self._values = ValueFormatter(translator)
 
     @staticmethod
-    def _keep_alive(value: str) -> str:
-        """Format an Ollama keep-alive value."""
-        return "infinite" if value == "-1" else value
+    def _section(name: str) -> str:
+        """Format a literal TOML section header for Rich."""
+        return rf"[bold cyan]\[{name}][/bold cyan]"
 
-    @staticmethod
-    def _library(value: str) -> str:
-        """Format an Ollama LLM library."""
-        return value.upper()
-
-    @staticmethod
-    def _vulkan(value: str) -> str:
-        """Format an Ollama Vulkan setting."""
-        normalized = value.lower()
-
-        if normalized in {"0", "false", "no", "disabled"}:
-            return "Disabled"
-
-        if normalized in {"1", "true", "yes", "enabled"}:
-            return "Enabled"
-
-        return value
+    def _source_suffix(self, source: str) -> str:
+        """Return a configuration source suffix."""
+        return self._translator(
+            "config.source_suffix.default",
+            default=" (via {source})",
+            source=source,
+        )
 
     def format(self, config: Mapping[str, str]) -> str:
-        """Format the supplied configuration."""
-        return self.all(config)
+        """Format configuration environment variables."""
+        return self.environment(config)
 
-    @classmethod
-    def all(
-        cls,
-        values: Mapping[str, str],
-        *,
-        config_values: set[str] | None = None,
+    def toml(
+        self,
+        values: Mapping[str, TomlValue],
     ) -> str:
-        """Format all supported configuration sections."""
-        configured = config_values or set()
+        """Format a TOML configuration mapping."""
+        lines: list[str] = []
+
+        def visit(
+            table: Mapping[str, TomlValue],
+            prefix: str = "",
+        ) -> None:
+            scalar_lines: list[str] = []
+            nested: list[tuple[str, dict[str, TomlValue]]] = []
+
+            for key, value in table.items():
+                if isinstance(value, dict):
+                    nested.append((key, value))
+                else:
+                    scalar_lines.append(self._format_toml_field(key, value))
+
+            if prefix:
+                if lines:
+                    lines.append("")
+
+                lines.append(
+                    self._section(
+                        self._section_name(prefix),
+                    )
+                )
+
+            lines.extend(scalar_lines)
+
+            for key, child in nested:
+                child_prefix = f"{prefix}.{key}" if prefix else key
+                visit(child, child_prefix)
+
+        visit(values)
+        return "\n".join(lines)
+
+    def _section_name(self, path: str) -> str:
+        """Format a TOML section path."""
+        return ".".join(self._labels.section(part) for part in path.split("."))
+
+    def _format_toml_field(
+        self,
+        key: str,
+        value: TomlValue,
+    ) -> str:
+        """Format one TOML field."""
+        return (
+            f"{self._labels.field(key)}: "
+            f"{self._values.format(value)}"
+            f"{self._source_suffix(self._labels.source('toml'))}"
+        )
+
+    def environment(
+        self,
+        values: Mapping[str, str],
+    ) -> str:
+        """Format configuration environment variables."""
         sections: list[str] = []
 
         pygent_values = {
@@ -68,125 +114,121 @@ class ConsoleFormatter(ConfigFormatter):
         }
 
         if pygent_values:
-            sections.append(
-                cls.default(
-                    pygent_values.get("PYGENT_PROVIDER", "ollama"),
-                    pygent_values.get(
-                        "PYGENT_MODEL",
-                        "qwen2.5-coder:3b",
-                    ),
-                    provider_from_config="PYGENT_PROVIDER" in configured,
-                    model_from_config="PYGENT_MODEL" in configured,
-                )
-            )
+            sections.append(self.pygent(pygent_values))
 
         if ollama_values:
-            sections.append(
-                cls.ollama(
-                    ollama_values,
-                    config_values=configured,
-                )
-            )
+            sections.append(self.ollama(ollama_values))
 
         if openrouter_values:
-            sections.append(
-                cls.openrouter(
-                    openrouter_values,
-                    config_values=configured,
-                )
-            )
+            sections.append(self.openrouter(openrouter_values))
 
         return "\n\n".join(sections)
 
-    @classmethod
-    def default(
-        cls,
-        provider: str,
-        model: str,
-        *,
-        provider_from_config: bool = False,
-        model_from_config: bool = False,
-    ) -> str:
-        """Format default provider configuration."""
-        return "\n".join(
-            [
-                "[Default]",
-                (f"Provider: {provider}{cls._source_suffix(provider_from_config)}"),
-                (f"Model: {model}{cls._source_suffix(model_from_config)}"),
-            ]
+    def pygent(self, values: Mapping[str, str]) -> str:
+        """Format Pygent environment configuration."""
+        provider = values.get("PYGENT_PROVIDER", "ollama")
+        model = values.get(
+            "PYGENT_MODEL",
+            "qwen2.5-coder:3b",
         )
-
-    @classmethod
-    def ollama(
-        cls,
-        values: Mapping[str, str],
-        *,
-        config_values: set[str] | None = None,
-    ) -> str:
-        """Format Ollama configuration."""
-        configured = config_values or set()
-
-        def get(name: str) -> tuple[str, bool]:
-            return (
-                values.get(name, "Not set"),
-                name in configured,
-            )
-
-        keep_alive, keep_alive_config = get("OLLAMA_KEEP_ALIVE")
-        library, library_config = get("OLLAMA_LLM_LIBRARY")
-        max_loaded, max_loaded_config = get("OLLAMA_MAX_LOADED_MODELS")
-        parallel, parallel_config = get("OLLAMA_NUM_PARALLEL")
-        vulkan, vulkan_config = get("OLLAMA_VULKAN")
+        source = self._labels.source("env")
 
         return "\n".join(
             [
-                "[Ollama]",
+                self._section("Pygent"),
                 (
-                    "Keep alive: "
-                    f"{cls._keep_alive(keep_alive)}"
-                    f"{cls._source_suffix(keep_alive_config)}"
+                    f"{self._labels.field('provider')}: "
+                    f"{self._values.format(provider)}"
+                    f"{self._source_suffix(source)}"
                 ),
                 (
-                    "LLM Library: "
-                    f"{cls._library(library)}"
-                    f"{cls._source_suffix(library_config)}"
+                    f"{self._labels.field('model')}: "
+                    f"{self._values.format(model)}"
+                    f"{self._source_suffix(source)}"
                 ),
-                (
-                    "Max loaded models: "
-                    f"{max_loaded}"
-                    f"{cls._source_suffix(max_loaded_config)}"
-                ),
-                (f"Parallel requests: {parallel}{cls._source_suffix(parallel_config)}"),
-                (f"Vulkan: {cls._vulkan(vulkan)}{cls._source_suffix(vulkan_config)}"),
             ]
         )
 
-    @classmethod
-    def openrouter(
-        cls,
-        values: Mapping[str, str],
-        *,
-        config_values: set[str] | None = None,
+    def all(
+        self,
+        environment: Mapping[str, str],
+        config: Mapping[str, TomlValue],
     ) -> str:
-        """Format OpenRouter configuration."""
-        configured = config_values or set()
+        """Format environment variables and configuration file values."""
+        sections: list[str] = []
 
+        if environment:
+            sections.append(self.environment(environment))
+
+        if config:
+            sections.append(self.toml(config))
+
+        return "\n\n".join(sections)
+
+    def ollama(self, values: Mapping[str, str]) -> str:
+        """Format Ollama environment configuration."""
+
+        def get(name: str) -> str:
+            return values.get(name, "Not set")
+
+        source = self._labels.source("env")
+
+        return "\n".join(
+            [
+                self._section("Ollama"),
+                (
+                    f"{self._labels.field('keep_alive')}: "
+                    f"{self._values.format(get('OLLAMA_KEEP_ALIVE'))}"
+                    f"{self._source_suffix(source)}"
+                ),
+                (
+                    f"{self._labels.field('llm_library')}: "
+                    f"{self._values.format(get('OLLAMA_LLM_LIBRARY'))}"
+                    f"{self._source_suffix(source)}"
+                ),
+                (
+                    f"{self._labels.field('max_loaded_models')}: "
+                    f"{self._values.format(get('OLLAMA_MAX_LOADED_MODELS'))}"
+                    f"{self._source_suffix(source)}"
+                ),
+                (
+                    f"{self._labels.field('parallel_requests')}: "
+                    f"{self._values.format(get('OLLAMA_NUM_PARALLEL'))}"
+                    f"{self._source_suffix(source)}"
+                ),
+                (
+                    f"{self._labels.field('vulkan')}: "
+                    f"{
+                        self._values.format(
+                            get('OLLAMA_VULKAN'),
+                            style=ValueStyle.ENABLED,
+                        )
+                    }"
+                    f"{self._source_suffix(source)}"
+                ),
+            ]
+        )
+
+    def openrouter(self, values: Mapping[str, str]) -> str:
+        """Format OpenRouter environment configuration."""
         lines = ["[OpenRouter]"]
+        source = self._labels.source("env")
 
         fields = (
-            ("OPENROUTER_API_KEY", "API key"),
-            ("OPENROUTER_BASE_URL", "Base URL"),
+            ("OPENROUTER_API_KEY", "api_key"),
+            ("OPENROUTER_BASE_URL", "base_url"),
         )
 
-        for name, label in fields:
+        for name, label_key in fields:
             if name not in values:
                 continue
 
-            value = values[name]
+            value = "********" if "KEY" in name else values[name]
 
-            if "KEY" in name:
-                value = "********"
-
-            lines.append(f"{label}: {value}{cls._source_suffix(name in configured)}")
+            lines.append(
+                f"{self._labels.field(label_key)}: "
+                f"{self._values.format(value)}"
+                f"{self._source_suffix(source)}"
+            )
 
         return "\n".join(lines)
