@@ -2,35 +2,27 @@
 
 Pygent development tasks and roadmap.
 
-## Completed
+## Current Queue
 
-- [x] Core provider-neutral types
-- [x] `Provider` interface
-- [x] Agent execution loop
-- [x] Tool abstraction and registry
-- [x] Tool execution and argument validation
-- [x] Pydantic JSON Schema validation
-- [x] Ollama provider
-- [x] OpenAI-compatible provider
-- [x] OpenAI provider convenience wrapper
-- [x] OpenRouter provider
-- [x] Provider error normalization
-- [x] Conversation memory
-- [x] Middleware abstraction and pipeline
-- [x] Streaming API and agent events
-- [x] Model usage representation
+### 1. Production Hardening
+
 - [x] Request timeout support
 - [x] Maximum tool-call limits
 - [x] Concurrent tool execution
-- [x] CLI configuration system
-- [x] CLI localization foundation
-- [x] Configuration formatting and value formatting
-- [x] GitHub Actions test workflow
-- [x] GitHub Actions lint/type-check workflow
+- [x] Cancellation support
+- [x] Tool timeouts
+- [x] Tool cancellation
+- [x] Robust concurrent tool execution
+- [x] Context-size handling
+- [x] Retry/backoff policy
+- [x] Connection/resource lifecycle handling
+- [x] Graceful shutdown
+- [x] Exception chaining and diagnostics
+- [x] Deterministic test coverage
+- [x] Edge-case tests
+- [x] Stress/concurrency tests
 
-## Work in Progress
-
-### Core
+### 2. Core Correctness
 
 - [ ] Provider contract tests
   - [ ] Common provider behavior
@@ -47,155 +39,36 @@ Pygent development tasks and roadmap.
 - [ ] Review public API exports
 - [ ] Remove dead/accidental code
 
-### Router
+### 3. Usage and Observability
 
-- [ ] Router abstraction
-- [ ] Provider/model selection
-- [ ] First-available strategy
-- [ ] Fallback strategy
-- [ ] Priority strategy
-- [ ] Provider availability handling
-- [ ] Routing errors
-- [ ] Routing tests
-
-### Memory
-
-- [x] Memory abstraction
-- [x] Conversation memory
-- [x] In-memory conversation storage
-- [x] Conversation IDs
-- [x] Clear/reset support
-- [x] `Agent` integration
-- [ ] Memory tests
-- [ ] Define memory lifecycle semantics
-- [ ] Document memory behavior
-
-### Middleware
-
-- [x] Middleware abstraction
-- [x] Composable middleware pipeline
-- [ ] Logging middleware
-- [ ] Retry middleware
-- [ ] Timing middleware
-- [ ] Usage tracking middleware
-- [ ] Middleware tests
-- [ ] Middleware ordering tests
-- [ ] Middleware exception propagation tests
-
-### Streaming
-
-- [x] Streaming API
-- [x] Agent event types
-- [x] Text delta events
-- [x] Iteration events
-- [x] Completion events
-- [ ] Tool-call delta events
-- [ ] Streaming provider integration
-- [ ] Streaming cancellation
-- [ ] Streaming tests
-- [ ] Define streaming API stability guarantees
-
-### Structured Outputs
-
-- [ ] Structured output API
-- [ ] Pydantic model validation
-- [ ] Provider integration
-- [ ] Structured output errors
-- [ ] Structured output tests
-- [ ] Define provider fallback behavior
-- [ ] Document supported response formats
-
-### Web Search
-
-- [ ] Web search skill
-- [ ] Search tool
-- [ ] DDGS provider
-- [ ] Normalized search results
-- [ ] Search limits
-- [ ] Error handling
-- [ ] Web search tests
-- [ ] Result metadata normalization
-- [ ] Safe query handling
-
-### Browser
-
-- [ ] Browser abstraction
-- [ ] Open URL tool
-- [ ] Page retrieval
-- [ ] Link clicking
-- [ ] Text finding
-- [ ] Normalized browser results
-- [ ] Browser errors
-- [ ] Browser tests
-- [ ] Request limits
-- [ ] Resource cleanup
-
-### Production Hardening
-
-- [x] Request timeout support
-- [x] Maximum tool-call limits
-- [x] Basic concurrent tool execution
-- [ ] Cancellation support
-- [ ] Tool timeouts
-- [ ] Tool cancellation
-- [ ] Context-size handling
-- [ ] Robust concurrent tool execution
-- [ ] Retry/backoff policy
-- [ ] Connection/resource lifecycle handling
-- [ ] Graceful shutdown
-- [ ] Exception chaining and diagnostics
-- [ ] Deterministic test coverage
-- [ ] Edge-case tests
-- [ ] Stress/concurrency tests
-
-### Usage and Observability
-
-- [x] Provider usage model
-- [x] Input token normalization
-- [x] Output token normalization
-- [x] Total token normalization
 - [ ] Provider usage tests
 - [ ] Usage aggregation across iterations
 - [ ] Usage aggregation across tool loops
 - [ ] Optional request timing metadata
 - [ ] Structured execution diagnostics
 
-### Configuration and CLI
+### 4. Web Search and Browser Completion
 
-- [x] TOML configuration loading
-- [x] Environment-variable configuration
-- [x] Configuration formatting
-- [x] Configuration localization
-- [ ] Complete CLI localization
-- [ ] `config list --section`
-- [ ] `config list --via`
-- [ ] Configuration source filtering
-- [ ] Configuration validation diagnostics
-- [ ] Configuration tests
-- [ ] CLI integration tests
+- [x] Provider-neutral web search abstraction
+- [x] Search provider interface
+- [x] DuckDuckGo provider
+- [x] Normalized search results
+- [x] Search limits
+- [x] Search error handling
+- [x] Search tests
+- [x] Browser abstraction
+- [x] URL fetching
+- [x] Response size limits
+- [x] Redirect handling
+- [ ] Link clicking
+- [ ] Text finding
+- [ ] Normalized browser results
+- [ ] Browser-specific errors
+- [ ] Browser tests
+- [ ] Browser resource cleanup
+- [ ] Search/browser agent tools
 
-### Testing and Quality
-
-- [ ] Fix Ruff/isort import sorting locally
-- [ ] Verify CI passes after local Ruff fixes
-- [ ] Full provider test matrix
-- [ ] Agent integration test suite
-- [ ] Tool integration test suite
-- [ ] Memory test suite
-- [ ] Middleware test suite
-- [ ] Streaming test suite
-- [ ] Structured output test suite
-- [ ] Configuration/CLI test suite
-- [ ] Error-path coverage
-- [ ] Cancellation tests
-- [ ] Timeout tests
-- [ ] Resource cleanup tests
-- [ ] Python 3.12 test coverage
-- [ ] Python 3.13 test coverage
-
-## Planned
-
-### API Stabilization
+### 5. API Stabilization
 
 - [ ] Review all public exports
 - [ ] Review naming consistency
@@ -207,7 +80,7 @@ Pygent development tasks and roadmap.
 - [ ] Define backwards-compatibility policy
 - [ ] Remove experimental APIs that should not be public
 
-### Documentation
+### 6. Documentation and Examples
 
 - [ ] Installation documentation
 - [ ] Quick-start documentation
@@ -230,7 +103,7 @@ Pygent development tasks and roadmap.
 - [ ] API reference
 - [ ] Keep README feature/status tables synchronized with implementation
 
-### Examples
+Examples:
 
 - [ ] `examples/basic_agent.py`
 - [ ] `examples/ollama.py`
@@ -246,7 +119,7 @@ Pygent development tasks and roadmap.
 - [ ] `examples/streaming.py`
 - [ ] `examples/structured_output.py`
 
-### CI and Packaging
+### 7. CI and Packaging
 
 - [ ] Python 3.13 CI coverage
 - [ ] Test multiple operating systems where practical
@@ -258,8 +131,10 @@ Pygent development tasks and roadmap.
 - [ ] Verify optional dependencies
 - [ ] Automated release validation
 - [ ] Changelog/release notes workflow
+- [ ] Fix Ruff/isort import sorting locally
+- [ ] Verify CI passes after local Ruff fixes
 
-### Alpha Release
+### 8. Alpha Release
 
 - [ ] Final API review
 - [ ] Final test suite pass
@@ -274,6 +149,97 @@ Pygent development tasks and roadmap.
 - [ ] Create GitHub release
 - [ ] Publish package
 - [ ] Verify installation from published package
+
+## Completed
+
+- [x] Core provider-neutral types
+- [x] `Provider` interface
+- [x] Agent execution loop
+- [x] Tool abstraction and registry
+- [x] Tool execution and argument validation
+- [x] Pydantic JSON Schema validation
+- [x] Ollama provider
+- [x] OpenAI-compatible provider
+- [x] OpenAI provider convenience wrapper
+- [x] OpenRouter provider
+- [x] Provider error normalization
+- [x] Router abstraction
+- [x] Provider/model selection
+- [x] First-available strategy
+- [x] Fallback strategy
+- [x] Priority strategy
+- [x] Provider availability handling
+- [x] Routing errors
+- [x] Routing tests
+- [x] Conversation memory
+- [x] Middleware abstraction and pipeline
+- [x] Logging middleware
+- [x] Retry middleware
+- [x] Timing middleware
+- [x] Usage tracking middleware
+- [x] Streaming API and agent events
+- [x] Model usage representation
+- [x] Request timeout support
+- [x] Maximum tool-call limits
+- [x] Concurrent tool execution
+- [x] Structured output API
+- [x] Pydantic model validation
+- [x] Structured output errors
+- [x] Structured output tests
+- [x] Web search abstraction
+- [x] DuckDuckGo provider
+- [x] Normalized search results
+- [x] Browser abstraction
+- [x] Page retrieval
+- [x] Request limits
+- [x] Redirect handling
+- [x] Username configuration
+- [x] Persistent conversation memory
+- [x] CLI memory management
+- [x] GitHub Actions test workflow
+- [x] GitHub Actions lint/type-check workflow
+
+## Work in Progress
+
+### Production Hardening
+
+- [x] Context-size handling
+- [x] Retry/backoff policy
+- [x] Connection/resource lifecycle handling
+- [x] Graceful shutdown
+- [x] Exception chaining and diagnostics
+- [x] Deterministic test coverage
+- [x] Edge-case tests
+- [x] Stress/concurrency tests
+
+### Core
+
+- [ ] Provider contract tests
+- [ ] Improve agent context handling
+- [ ] Review agent/tool loop edge cases
+- [ ] Add comprehensive agent-loop tests
+- [ ] Review public API exports
+- [ ] Remove dead/accidental code
+
+### Web Search / Browser
+
+- [ ] Link clicking
+- [ ] Text finding
+- [ ] Normalized browser results
+- [ ] Browser-specific errors
+- [ ] Browser tests
+- [ ] Browser resource cleanup
+- [ ] Search/browser agent tools
+
+### Usage and Observability
+
+- [ ] Provider usage tests
+- [ ] Usage aggregation across iterations
+- [ ] Usage aggregation across tool loops
+- [ ] Optional request timing metadata
+- [ ] Structured execution diagnostics
+
+## Planned
 
 ### Future Providers
 
@@ -296,19 +262,3 @@ Pygent development tasks and roadmap.
 - [ ] Agent hooks/lifecycle events
 - [ ] Better tracing/observability integration
 - [ ] Plugin/extension system
-
-### Configuration and CLI
-
-- [ ] Username configuration
-  - [ ] `user.username` configuration field
-  - [ ] Environment-variable override
-  - [ ] CLI display
-  - [ ] Configuration tests
-
-- [ ] CLI memory management
-  - [ ] `memory list`
-  - [ ] `memory get`
-  - [ ] `memory clear`
-  - [ ] `memory reset`
-  - [ ] `memory export`
-  - [ ] `memory import`
