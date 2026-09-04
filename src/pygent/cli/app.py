@@ -6,6 +6,7 @@ from pygent.i18n import load_translator
 
 from .commands.chat import chat
 from .commands.config import config
+from .commands.memory import memory
 
 
 @click.group()
@@ -25,3 +26,4 @@ def main(ctx: click.Context, locale: str) -> None:
 
 main.add_command(chat)
 main.add_command(config)
+main.add_command(memory)

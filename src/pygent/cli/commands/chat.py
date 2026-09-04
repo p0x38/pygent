@@ -7,8 +7,8 @@ import click
 
 from pygent import Agent
 from pygent.agent import AgentContext
-from pygent.config import load_config
-from pygent.memory import ConversationMemory
+from pygent.config import get_username, load_config
+from pygent.memory import PersistentConversationMemory
 from pygent.syntax import SyntaxContext, SyntaxSession
 
 from ...config import get_default_model, get_default_provider
@@ -43,8 +43,9 @@ def _show_syntax_help() -> None:
 
 async def _chat(provider: str, model: str) -> None:
     llm = _create_provider(provider, model)
-    memory = ConversationMemory(conversation_id="cli")
+    memory = PersistentConversationMemory(conversation_id="cli")
     syntax_session = SyntaxSession(load_config().chat.syntax)
+    username = get_username()
 
     agent = Agent(
         llm,
@@ -52,7 +53,10 @@ async def _chat(provider: str, model: str) -> None:
         max_iterations=8,
     )
 
-    console.print(f"[bold]Pygent[/bold] — {provider}/{model}")
+    title = f"[bold]Pygent[/bold] — {provider}/{model}"
+    if username:
+        title += f" — {username}"
+    console.print(title)
     console.print("Type /help for commands, /exit to quit.\n")
 
     while True:
