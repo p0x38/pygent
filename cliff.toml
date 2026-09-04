@@ -9,19 +9,21 @@ and this project follows [Semantic Versioning](https://semver.org/).
 """
 
 body = """
-{% if version %}\
-## {{ version }}\
-{% else %}\
-## Unreleased\
-{% endif %}\
-{% for group, commits in commits | group_by(attribute="group") %}\
-{% if group %}\
+{% if version %}
+## {{ version }}
+{% else %}
+## Unreleased
+{% endif %}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+{% if group %}
 ### {{ group | striptags | trim | upper_first }}
-{% for commit in commits %}\
-- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | upper_first }}\
-{% endfor %}\
-{% endif %}\
-{% endfor %}\
+
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | upper_first }}
+{% endfor %}
+{% endif %}
+{% endfor %}
 """
 
 footer = """
