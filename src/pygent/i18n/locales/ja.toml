@@ -32,6 +32,9 @@ no = "いいえ"
 env = "環境変数"
 toml = "TOML"
 
+[config.source_suffix]
+default = "（{source}経由）"
+
 [config.unit]
 byte = "バイト"
 bytes = "バイト"
@@ -42,3 +45,6 @@ day = "{count}日"
 hour = "{count}時間"
 minute = "{count}分"
 second = "{count}秒"
+
+[config.message]
+none = "Pygentの設定が見つかりません。"
