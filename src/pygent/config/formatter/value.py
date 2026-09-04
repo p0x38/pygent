@@ -30,6 +30,38 @@ class ByteBase(StrEnum):
 class ValueFormatter:
     """Format individual configuration values for display."""
 
+    _SIZE_UNITS = {
+        "B": 1,
+        "KB": 1_000,
+        "MB": 1_000_000,
+        "GB": 1_000_000_000,
+        "TB": 1_000_000_000_000,
+        "PB": 1_000_000_000_000_000,
+        "KiB": 2**10,
+        "MiB": 2**20,
+        "GiB": 2**30,
+        "TiB": 2**40,
+        "PiB": 2**50,
+    }
+    _DURATION_UNITS = {
+        "ms": 0.001,
+        "millisecond": 0.001,
+        "milliseconds": 0.001,
+        "s": 1,
+        "sec": 1,
+        "second": 1,
+        "seconds": 1,
+        "min": 60,
+        "minute": 60,
+        "minutes": 60,
+        "h": 3_600,
+        "hour": 3_600,
+        "hours": 3_600,
+        "d": 86_400,
+        "day": 86_400,
+        "days": 86_400,
+    }
+
     def __init__(self, translator: Translator) -> None:
         self._translator = translator
 
@@ -56,26 +88,16 @@ class ValueFormatter:
         match style:
             case ValueStyle.BOOLEAN:
                 return self.boolean(value)
-
             case ValueStyle.ENABLED:
                 return self.enabled(value)
-
             case ValueStyle.YES_NO:
                 return self.yes_no(value)
-
             case ValueStyle.SIZE:
-                return self.size(
-                    value,
-                    unit=unit,
-                    base=byte_base,
-                )
-
+                return self.size(value, unit=unit, base=byte_base)
             case ValueStyle.DURATION:
-                return self.duration(value)
-
+                return self.duration(value, unit=unit)
             case ValueStyle.NUMBER:
                 return self.number(value, unit=unit)
-
             case ValueStyle.DEFAULT:
                 return self.default(value, unit=unit)
 
@@ -83,17 +105,13 @@ class ValueFormatter:
     def _try_int(value: str) -> int | None:
         """Try to parse a string as an integer."""
         normalized = value.strip()
-
         sign = ""
         digits = normalized
-
         if normalized[:1] in {"+", "-"}:
             sign = normalized[0]
             digits = normalized[1:]
-
         if len(digits) > 1 and digits.startswith("0") and digits[1].isdigit():
             return None
-
         try:
             return int(f"{sign}{digits}")
         except ValueError:
@@ -112,89 +130,37 @@ class ValueFormatter:
         """Coerce string values to common scalar types."""
         if not isinstance(value, str):
             return value
-
         normalized = value.strip()
-
         if normalized.lower() in {"true", "false"}:
             return normalized.lower() == "true"
-
         integer = cls._try_int(normalized)
-
         if integer is not None:
             return integer
-
         decimal = cls._try_float(normalized)
-
         if decimal is not None:
             return decimal
-
         return value
 
-    @staticmethod
-    def detect_style(
-        value: object,
-        *,
-        unit: str | None = None,
-    ) -> ValueStyle:
+    @classmethod
+    def detect_style(cls, value: object, *, unit: str | None = None) -> ValueStyle:
         """Detect a suitable display style for a value."""
         if isinstance(value, bool):
             return ValueStyle.BOOLEAN
-
-        if unit in {
-            "B",
-            "KB",
-            "MB",
-            "GB",
-            "TB",
-            "PB",
-            "KiB",
-            "MiB",
-            "GiB",
-            "TiB",
-            "PiB",
-        }:
+        if unit in cls._SIZE_UNITS:
             return ValueStyle.SIZE
-
-        if unit in {
-            "s",
-            "sec",
-            "second",
-            "seconds",
-            "ms",
-            "millisecond",
-            "milliseconds",
-            "min",
-            "minute",
-            "minutes",
-            "h",
-            "hour",
-            "hours",
-            "d",
-            "day",
-            "days",
-        }:
+        if unit in cls._DURATION_UNITS:
             return ValueStyle.DURATION
-
         if isinstance(value, Real):
             return ValueStyle.NUMBER
-
         return ValueStyle.DEFAULT
 
-    def default(
-        self,
-        value: object,
-        *,
-        unit: str | None = None,
-    ) -> str:
+    def default(self, value: object, *, unit: str | None = None) -> str:
         """Format a value without special conversion."""
         result = str(value)
-
         if unit:
             return f"{result} {unit}"
-
         if isinstance(value, str):
             return f'"{result}"'
-
         return result
 
     @staticmethod
@@ -202,86 +168,41 @@ class ValueFormatter:
         """Format a value as True or False."""
         if isinstance(value, bool):
             return str(value)
-
         normalized = str(value).lower()
-
         if normalized == "true":
             return "True"
-
         if normalized == "false":
             return "False"
-
         return str(value)
 
     def enabled(self, value: object) -> str:
         """Format a value as Enabled or Disabled."""
-        if isinstance(value, bool):
-            key = "enabled" if value else "disabled"
-
-            return self._translator(
-                f"config.value.{key}",
-                default=key.capitalize(),
-            )
-
         normalized = str(value).lower()
-
         if normalized in {"true", "1", "yes", "enabled"}:
-            return self._translator(
-                "config.value.enabled",
-                default="Enabled",
-            )
-
+            return self._translator("config.value.enabled", default="Enabled")
         if normalized in {"false", "0", "no", "disabled"}:
-            return self._translator(
-                "config.value.disabled",
-                default="Disabled",
-            )
-
+            return self._translator("config.value.disabled", default="Disabled")
         return str(value)
 
     def yes_no(self, value: object) -> str:
         """Format a value as Yes or No."""
-        if isinstance(value, bool):
-            key = "yes" if value else "no"
-
-            return self._translator(
-                f"config.value.{key}",
-                default=key.capitalize(),
-            )
-
         normalized = str(value).lower()
-
         if normalized in {"true", "1", "yes", "enabled"}:
-            return self._translator(
-                "config.value.yes",
-                default="Yes",
-            )
-
+            return self._translator("config.value.yes", default="Yes")
         if normalized in {"false", "0", "no", "disabled"}:
-            return self._translator(
-                "config.value.no",
-                default="No",
-            )
-
+            return self._translator("config.value.no", default="No")
         return str(value)
 
-    def number(
-        self,
-        value: object,
-        *,
-        unit: str | None = None,
-    ) -> str:
+    def number(self, value: object, *, unit: str | None = None) -> str:
         """Format a numeric value."""
         if not isinstance(value, Real):
             return self.default(value, unit=unit)
-
         if isinstance(value, float) and value.is_integer():
             result = str(int(value))
         elif isinstance(value, float):
             result = f"{value:g}"
         else:
             result = str(value)
-
         return f"{result} {unit}" if unit else result
 
     def size(
@@ -291,44 +212,26 @@ class ValueFormatter:
         unit: str | None = None,
         base: ByteBase = ByteBase.DECIMAL,
     ) -> str:
-        """Format a byte-size value."""
+        """Format a byte-size value using the requested output base."""
         if not isinstance(value, Real):
+            return self.default(value, unit=unit)
+
+        input_unit = unit or "B"
+        input_factor = self._SIZE_UNITS.get(input_unit)
+        if input_factor is None:
             return self.default(value, unit=unit)
 
         if base is ByteBase.DECIMAL:
             units = ("B", "KB", "MB", "GB", "TB", "PB")
-            factors = {
-                "B": 1,
-                "KB": 1_000,
-                "MB": 1_000_000,
-                "GB": 1_000_000_000,
-                "TB": 1_000_000_000_000,
-                "PB": 1_000_000_000_000_000,
-            }
         else:
             units = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
-            factors = {
-                "B": 1,
-                "KiB": 2**10,
-                "MiB": 2**20,
-                "GiB": 2**30,
-                "TiB": 2**40,
-                "PiB": 2**50,
-            }
 
-        input_unit = unit or "B"
-
-        if input_unit not in factors:
-            return self.default(value, unit=unit)
-
-        size = float(value) * factors[input_unit]
-
-        output_unit = units[0]
+        factors = {candidate: self._SIZE_UNITS[candidate] for candidate in units}
+        size = float(value) * input_factor
+        output_unit = "B"
         result = size
-
         for candidate in units:
             factor = factors[candidate]
-
             if abs(size) >= factor:
                 output_unit = candidate
                 result = size / factor
@@ -336,45 +239,32 @@ class ValueFormatter:
                 break
 
         if output_unit == "B":
-            amount = int(result) if result.is_integer() else result
-            noun_key = "byte" if abs(amount) == 1 else "bytes"
-
-            amount_text = (
-                str(int(amount))
-                if isinstance(amount, float) and amount.is_integer()
-                else f"{amount:g}"
-            )
-
+            amount_text = f"{result:g}"
+            noun_key = "byte" if abs(result) == 1 else "bytes"
             return (
                 f"{amount_text} "
                 f"{self._translator(f'config.unit.{noun_key}', default=noun_key)}"
             )
+        return f"{int(result) if result.is_integer() else result:g} {output_unit}"
 
-        if result.is_integer():
-            return f"{int(result)} {output_unit}"
-
-        return f"{result:g} {output_unit}"
-
-    def duration(self, value: object) -> str:
-        """Format a duration in seconds."""
+    def duration(self, value: object, *, unit: str | None = None) -> str:
+        """Format a duration after converting its input unit to seconds."""
         if not isinstance(value, Real):
-            return self.default(value)
+            return self.default(value, unit=unit)
 
-        total_seconds = float(value)
+        factor = self._DURATION_UNITS.get(unit or "s")
+        if factor is None:
+            return self.default(value, unit=unit)
+        total_seconds = float(value) * factor
 
         if total_seconds < 0:
             return f"-{self.duration(-total_seconds)}"
-
         if total_seconds == 0:
-            return self._translator(
-                "config.duration.zero",
-                default="0 seconds",
-            )
+            return self._translator("config.duration.zero", default="0 seconds")
 
         days, remainder = divmod(total_seconds, 86_400)
         hours, remainder = divmod(remainder, 3_600)
         minutes, seconds = divmod(remainder, 60)
-
         parts: list[str] = []
 
         if days:
@@ -385,7 +275,6 @@ class ValueFormatter:
                     count=int(days),
                 )
             )
-
         if hours:
             parts.append(
                 self._translator(
@@ -394,7 +283,6 @@ class ValueFormatter:
                     count=int(hours),
                 )
             )
-
         if minutes:
             parts.append(
                 self._translator(
@@ -403,10 +291,8 @@ class ValueFormatter:
                     count=int(minutes),
                 )
             )
-
         if seconds:
             seconds_text = str(int(seconds)) if seconds.is_integer() else f"{seconds:g}"
-
             parts.append(
                 self._translator(
                     "config.duration.second",
@@ -414,5 +300,4 @@ class ValueFormatter:
                     count=seconds_text,
                 )
             )
-
         return " ".join(parts)
