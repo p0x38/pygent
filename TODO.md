@@ -111,6 +111,10 @@ Pygent development tasks and roadmap.
 - [ ] Review event model stability
 - [ ] Define backwards-compatibility policy
 - [ ] Remove experimental APIs that should not be public
+- [ ] Define provider-neutral model request/response abstraction
+- [ ] Define normalized tool-call representation
+- [ ] Define provider capability representation
+- [ ] Define provider-specific feature handling
 
 ### 5. Documentation and Examples
 
@@ -134,6 +138,7 @@ Pygent development tasks and roadmap.
 - [ ] Cancellation/timeout documentation
 - [ ] API reference
 - [ ] Keep README feature/status tables synchronized with implementation
+- [ ] Document OpenAI Chat Completions compatibility
 
 ### 6. CI and Packaging
 
@@ -255,8 +260,23 @@ Pygent development tasks and roadmap.
 ### Future Providers
 
 - [ ] Anthropic provider
+  - [ ] Implement Anthropic Messages API
+  - [ ] Map Messages content blocks to pygent types
+  - [ ] Map tool use/tool results
+  - [ ] Map usage information
+  - [ ] Normalize Anthropic errors
+
 - [ ] Google provider
 - [ ] Additional OpenAI-compatible providers
+
+- [ ] OpenAI Responses API provider
+  - [ ] Implement Responses API adapter
+  - [ ] Map response items to pygent types
+  - [ ] Map tool calls and tool results
+  - [ ] Map usage information
+  - [ ] Handle streaming
+  - [ ] Handle provider-specific capabilities
+
 - [ ] Provider capability discovery
 - [ ] Provider-specific feature negotiation
 
