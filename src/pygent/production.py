@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable
+import random
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import TypeVar
+
+from pygent.exceptions import (
+    ProviderConnectionError,
+    ProviderRateLimitError,
+    ProviderRequestError,
+)
 
 T = TypeVar("T")
 
@@ -24,6 +32,69 @@ class CancellationToken:
     async def wait(self) -> None:
         """Wait until cancellation is requested."""
         await self._event.wait()
+
+
+@dataclass(frozen=True, slots=True)
+class RetryPolicy:
+    """Bounded exponential-backoff policy for transient provider failures."""
+
+    attempts: int = 3
+    base_delay: float = 0.5
+    max_delay: float = 8.0
+    jitter: float = 0.1
+
+    def __post_init__(self) -> None:
+        if self.attempts < 1:
+            raise ValueError("attempts must be at least 1")
+        if self.base_delay < 0:
+            raise ValueError("base_delay must be non-negative")
+        if self.max_delay < self.base_delay:
+            raise ValueError("max_delay must be at least base_delay")
+        if self.jitter < 0:
+            raise ValueError("jitter must be non-negative")
+
+
+def is_retryable_provider_error(exc: BaseException) -> bool:
+    """Return whether a provider error is safe to retry."""
+    if isinstance(exc, (ProviderConnectionError, ProviderRateLimitError)):
+        return True
+    if isinstance(exc, ProviderRequestError):
+        return exc.status_code in {408, 409, 425, 500, 502, 503, 504}
+    return False
+
+
+async def retry_async(
+    operation: Callable[[], Awaitable[T]],
+    *,
+    policy: RetryPolicy | None = None,
+    cancellation: CancellationToken | None = None,
+) -> T:
+    """Run an async operation with bounded retries for transient failures."""
+    policy = policy or RetryPolicy()
+
+    for attempt in range(1, policy.attempts + 1):
+        if cancellation is not None and cancellation.cancelled:
+            raise asyncio.CancelledError("agent cancellation requested")
+        try:
+            return await operation()
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            if not is_retryable_provider_error(exc) or attempt >= policy.attempts:
+                raise
+
+            delay = min(policy.max_delay, policy.base_delay * (2 ** (attempt - 1)))
+            if policy.jitter:
+                delay += random.uniform(0, policy.jitter)
+            if cancellation is None:
+                await asyncio.sleep(delay)
+            else:
+                try:
+                    await asyncio.wait_for(cancellation.wait(), timeout=delay)
+                except asyncio.TimeoutError:
+                    pass
+
+    raise AssertionError("retry loop exited unexpectedly")
 
 
 async def cancellable_gather(
