@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from pygent.agent.context import AgentContext
 from pygent.agent.events import AgentEvent
 from pygent.exceptions import AgentLoopError
+from pygent.production import CancellationToken, cancellable_gather
 from pygent.providers.base import Provider
 from pygent.tools.calls import execute_tool_call
 from pygent.tools.registry import ToolRegistry
@@ -23,6 +24,7 @@ class AgentLoop:
         max_iterations: int = 8,
         max_tool_calls: int | None = None,
         total_timeout: float | None = None,
+        cancellation: CancellationToken | None = None,
     ) -> None:
         if max_iterations < 1:
             raise ValueError("max_iterations must be at least 1")
@@ -35,22 +37,21 @@ class AgentLoop:
         self.max_iterations = max_iterations
         self.max_tool_calls = max_tool_calls
         self.total_timeout = total_timeout
+        self.cancellation = cancellation
+
+    def _check_cancelled(self) -> None:
+        if self.cancellation is not None and self.cancellation.cancelled:
+            raise asyncio.CancelledError("agent cancellation requested")
 
     def _too_many_tool_calls(self, count: int) -> bool:
         return self.max_tool_calls is not None and count >= self.max_tool_calls
 
-    async def _provider_call(
-        self,
-        messages: list[Message],
-    ) -> ModelResponse:
+    async def _provider_call(self, messages: list[Message]) -> ModelResponse:
+        self._check_cancelled()
+        coroutine = self.provider.complete(messages, tools=self.tools.definitions())
         if self.total_timeout is None:
-            return await self.provider.complete(
-                messages, tools=self.tools.definitions()
-            )
-        return await asyncio.wait_for(
-            self.provider.complete(messages, tools=self.tools.definitions()),
-            timeout=self.total_timeout,
-        )
+            return await coroutine
+        return await asyncio.wait_for(coroutine, timeout=self.total_timeout)
 
     async def run(
         self,
@@ -61,6 +62,7 @@ class AgentLoop:
         """Run until the model produces a response without tool calls."""
         tool_call_count = 0
         for iteration in range(1, self.max_iterations + 1):
+            self._check_cancelled()
             response = await self._provider_call(messages)
 
             if not response.tool_calls:
@@ -81,11 +83,12 @@ class AgentLoop:
                 )
             )
 
-            results = await asyncio.gather(
+            results = await cancellable_gather(
                 *(
                     execute_tool_call(self.tools, call, context=context)
                     for call in response.tool_calls
-                )
+                ),
+                cancellation=self.cancellation,
             )
             messages.extend(
                 Message(
@@ -111,9 +114,12 @@ class AgentLoop:
         """Stream :class:`AgentEvent` instances from a complete run."""
         tool_call_count = 0
         for iteration in range(1, self.max_iterations + 1):
+            self._check_cancelled()
             yield AgentEvent(type="iteration_start", iteration=iteration)
             try:
                 response = await self._provider_call(messages)
+            except asyncio.CancelledError:
+                raise
             except Exception as exc:
                 yield AgentEvent(type="error", iteration=iteration, error=str(exc))
                 return
@@ -153,11 +159,12 @@ class AgentLoop:
                 )
             )
 
-            results = await asyncio.gather(
+            results = await cancellable_gather(
                 *(
                     execute_tool_call(self.tools, call, context=context)
                     for call in response.tool_calls
-                )
+                ),
+                cancellation=self.cancellation,
             )
             for call, result in zip(response.tool_calls, results, strict=False):
                 yield AgentEvent(
