@@ -30,10 +30,17 @@ class ChatConfig(BaseModel):
     syntax: SyntaxConfig = Field(default_factory=SyntaxConfig)
 
 
+class UserConfig(BaseModel):
+    """User identity configuration."""
+
+    username: str | None = None
+
+
 class Config(BaseModel):
     """Pygent user configuration."""
 
     model_config = ConfigDict(extra="ignore")
 
+    user: UserConfig = Field(default_factory=UserConfig)
     provider: ProviderConfig = Field(default_factory=ProviderConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)
