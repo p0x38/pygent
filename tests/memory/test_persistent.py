@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -52,7 +53,9 @@ def test_persistent_memory_rejects_invalid_json(tmp_path: Path) -> None:
         PersistentConversationMemory(path=path)
 
 
-def test_persistent_memory_loads_valid_json_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_persistent_memory_loads_valid_json_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "memory.json"
     memory = PersistentConversationMemory("chat", path=path)
     memory.add(Message(role="user", content="hello"))
@@ -60,7 +63,13 @@ def test_persistent_memory_loads_valid_json_once(tmp_path: Path, monkeypatch: py
     original_read_text = Path.read_text
     reads = 0
 
-    def counted_read_text(self: Path, *args: object, **kwargs: object) -> str:
+    original_read_text: Callable[..., str] = Path.read_text
+
+    def counted_read_text(
+        self: Path,
+        *args: object,
+        **kwargs: object,
+    ) -> str:
         nonlocal reads
         if self == path:
             reads += 1
