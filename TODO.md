@@ -86,15 +86,15 @@ Pygent development tasks and roadmap.
 - [ ] Verify optional dependencies
 - [ ] Automated release validation
 - [ ] Changelog/release notes workflow
-- [ ] Fix Ruff/isort import sorting locally
+- [x] Fix Ruff/isort import sorting locally
 - [ ] Verify CI passes after local Ruff fixes
 
 ### 7. Alpha Release
 
 - [ ] Final API review
-- [ ] Final test suite pass
+- [x] Final test suite pass
 - [x] Ruff/lint pass
-- [ ] Type-check pass
+- [x] Type-check pass
 - [ ] CI pass
 - [ ] README review
 - [ ] Documentation review
