@@ -6,14 +6,14 @@ Pygent development tasks and roadmap.
 
 ### 1. Core Correctness
 
-- [ ] Provider contract tests
-  - [ ] Common provider behavior
-  - [ ] Message conversion
-  - [ ] Tool-call behavior
-  - [ ] Finish reasons
-  - [ ] Usage handling
-  - [ ] Error normalization
-  - [ ] Provider lifecycle
+- [x] Provider contract tests
+  - [x] Common provider behavior
+  - [x] Message conversion
+  - [x] Tool-call behavior
+  - [x] Finish reasons
+  - [x] Usage handling
+  - [x] Error normalization
+  - [x] Provider lifecycle
 - [ ] Improve agent context handling
 - [ ] Review agent/tool loop edge cases
 - [ ] Add comprehensive agent-loop tests
@@ -87,7 +87,7 @@ Pygent development tasks and roadmap.
 - [ ] Automated release validation
 - [ ] Changelog/release notes workflow
 - [x] Fix Ruff/isort import sorting locally
-- [ ] Verify CI passes after local Ruff fixes
+- [x] Verify CI passes after local Ruff fixes
 
 ### 7. Alpha Release
 
@@ -95,7 +95,7 @@ Pygent development tasks and roadmap.
 - [x] Final test suite pass
 - [x] Ruff/lint pass
 - [x] Type-check pass
-- [ ] CI pass
+- [x] CI pass
 - [ ] README review
 - [ ] Documentation review
 - [ ] Package metadata review
