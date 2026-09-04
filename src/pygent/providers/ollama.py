@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pygent.providers.base import Provider
-from pygent.types import Message, ModelResponse, ToolCall, ToolDefinition
+from pygent.types import Message, ModelResponse, ToolCall, ToolDefinition, Usage
 
 
 class OllamaProvider(Provider):
@@ -57,10 +57,21 @@ class OllamaProvider(Provider):
             for index, tool_call in enumerate(response_message.tool_calls or (), 1)
         ]
 
+        prompt_tokens = getattr(response, "prompt_eval_count", None)
+        output_tokens = getattr(response, "eval_count", None)
+        usage = None
+        if isinstance(prompt_tokens, int) and isinstance(output_tokens, int):
+            usage = Usage(
+                input_tokens=prompt_tokens,
+                output_tokens=output_tokens,
+                total_tokens=prompt_tokens + output_tokens,
+            )
+
         return ModelResponse(
             content=response_message.content,
             tool_calls=tool_calls,
             finish_reason=response.done_reason,
+            usage=usage,
         )
 
     @staticmethod
