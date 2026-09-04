@@ -1,13 +1,4 @@
-"""Configuration helpers for Pygent.
-
-The :func:`load_dotenv` wrapper makes ``python-dotenv`` an optional dependency
-so that Pygent itself does not require it. Providers call
-:func:`getenv` (instead of :func:`os.environ.get` directly) so that any
-``.env`` file the user has in their project is picked up automatically when
-the optional extra is installed.
-
-Pygent also provides a user-level TOML configuration file for CLI settings.
-"""
+"""Configuration loading helpers."""
 
 from __future__ import annotations
 
@@ -17,60 +8,30 @@ from pathlib import Path
 from typing import Any
 
 from platformdirs import user_config_dir
-from pydantic import BaseModel, ConfigDict, Field
+
+from .models import Config
 
 _CONFIG_DIR_NAME = "pygent"
 _CONFIG_FILE_NAME = "config.toml"
 
-_LOADED = False
-_LOAD_ERROR: Exception | None = None
-
-
-class DefaultConfig(BaseModel):
-    """Default provider settings."""
-
-    provider: str = "ollama"
-    model: str = "qwen2.5-coder:3b"
-
-
-class SyntaxConfig(BaseModel):
-    """Configuration for conversational syntax."""
-
-    enabled: bool = True
-    prefixes: dict[str, str] = Field(
-        default_factory=lambda: {"mention": "@", "command": "/"}
-    )
-
-
-class ChatConfig(BaseModel):
-    """Interactive chat configuration."""
-
-    syntax: SyntaxConfig = Field(default_factory=SyntaxConfig)
-
-
-class Config(BaseModel):
-    """Pygent user configuration."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    default: DefaultConfig = Field(default_factory=DefaultConfig)
-    chat: ChatConfig = Field(default_factory=ChatConfig)
+_loaded = False
+_load_error: Exception | None = None
 
 
 def _ensure_loaded() -> None:
     """Load ``.env`` from the current directory and parents once per process."""
-    global _LOADED, _LOAD_ERROR
+    global _loaded, _load_error
 
-    if _LOADED:
+    if _loaded:
         return
 
-    _LOADED = True
+    _loaded = True
 
     try:
         from dotenv import find_dotenv
         from dotenv import load_dotenv as _load_dotenv
     except ImportError as exc:
-        _LOAD_ERROR = exc
+        _load_error = exc
         return
 
     try:
@@ -85,28 +46,32 @@ def _ensure_loaded() -> None:
 def load_dotenv(*, path: str | Path | None = None) -> bool:
     """Load a ``.env`` file into :data:`os.environ`.
 
-    Returns ``True`` if the file was loaded, ``False`` if the optional
+    Returns ``True`` if the file was loaded, or ``False`` if the optional
     ``python-dotenv`` dependency is not installed.
     """
-    global _LOADED, _LOAD_ERROR
+    global _loaded, _load_error
 
     if path is not None:
         try:
             from dotenv import load_dotenv as _load
         except ImportError as exc:
-            _LOAD_ERROR = exc
+            _load_error = exc
             return False
 
-        _LOADED = True
-        _LOAD_ERROR = None
+        _loaded = True
+        _load_error = None
+
         return bool(_load(Path(path), override=False))
 
     _ensure_loaded()
-    return _LOAD_ERROR is None
+    return _load_error is None
 
 
-def getenv(name: str, default: str | None = None) -> str | None:
-    """Return ``os.environ[name]`` after attempting to load ``.env``."""
+def getenv(
+    name: str,
+    default: str | None = None,
+) -> str | None:
+    """Return an environment variable after attempting to load ``.env``."""
     _ensure_loaded()
     return os.environ.get(name, default)
 
@@ -148,7 +113,7 @@ def init_config(*, force: bool = False) -> Path:
 
     Raises:
         FileExistsError: If the configuration already exists and ``force`` is
-            ``False``.
+            False.
         OSError: If the configuration directory or file cannot be created.
     """
     path = config_path()
@@ -201,10 +166,6 @@ def get_default_model() -> str:
 
 
 __all__ = [
-    "ChatConfig",
-    "Config",
-    "DefaultConfig",
-    "SyntaxConfig",
     "config_dir",
     "config_path",
     "get_default_model",

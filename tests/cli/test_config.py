@@ -164,9 +164,7 @@ def test_config_init(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert 'model = "qwen2.5-coder:3b"' in content
 
 
-def test_config_init_command(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_config_init_command(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(

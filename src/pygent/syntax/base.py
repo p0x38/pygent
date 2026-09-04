@@ -11,7 +11,7 @@ from typing import Any
 class SyntaxContext:
     """Context supplied to a syntax handler."""
 
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,7 +20,7 @@ class SyntaxResult:
 
     text: str = ""
     handled: bool = True
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 class SyntaxHandler(ABC):

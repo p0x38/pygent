@@ -16,7 +16,7 @@ class ProcessedInput:
 
     text: str
     results: tuple[SyntaxResult, ...] = ()
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 class SyntaxProcessor:

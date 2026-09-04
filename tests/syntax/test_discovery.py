@@ -9,13 +9,6 @@ from pygent.syntax import (
 )
 
 
-class FakeEntryPoint:
-    name = "example"
-
-    def load(self) -> ExamplePlugin:
-        return ExamplePlugin()
-
-
 class ExamplePlugin:
     def register_syntax(self, registry: SyntaxRegistry) -> None:
         registry.register(ExampleHandler())

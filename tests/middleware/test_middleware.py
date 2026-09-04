@@ -18,7 +18,9 @@ from pygent.types import Message, ModelResponse, ToolDefinition, Usage
 
 
 class _ScriptedProvider:
-    def __init__(self, responses: list[ModelResponse], errors: Sequence[Exception]) -> None:
+    def __init__(
+        self, responses: list[ModelResponse], errors: Sequence[Exception]
+    ) -> None:
         self.responses = list(responses)
         self.errors = list(errors)
         self.calls = 0
@@ -160,5 +162,5 @@ async def test_chain_runs_in_order() -> None:
     assert order == ["a", "b", "c"]
 
 
-async def _noop() -> None:
+async def _noop() -> None:  # ruff: ignore[unused-async]
     return None

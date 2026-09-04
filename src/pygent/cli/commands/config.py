@@ -4,7 +4,7 @@ import os
 
 import click
 
-from pygent.config import config_path, getenv, init_config
+from pygent.config import ConsoleFormatter, config_path, getenv, init_config
 
 from ..ui.console import console
 
@@ -37,25 +37,21 @@ def get(name: str) -> None:
 @config.command("list")
 def list_config() -> None:
     """List configured Pygent-related environment variables."""
-    found = sorted(
-        name
+    values = {
+        name: os.environ[name]
         for name in os.environ
-        if name.startswith("PYGENT_")
-        or name.startswith("OLLAMA_")
-        or name.startswith("OPENROUTER_")
-    )
+        if (
+            name.startswith("PYGENT_")
+            or name.startswith("OLLAMA_")
+            or name.startswith("OPENROUTER_")
+        )
+    }
 
-    if not found:
+    if not values:
         console.print("[dim]No Pygent-related environment variables found.[/dim]")
         return
 
-    for name in found:
-        if any(
-            token in name.upper() for token in ("KEY", "TOKEN", "PASSWORD", "SECRET")
-        ):
-            console.print(f"{name}=********")
-        else:
-            console.print(f"{name}={os.environ[name]}")
+    console.print(ConsoleFormatter.all(values))
 
 
 @config.command("path")
@@ -76,7 +72,7 @@ def path() -> None:
     help="Overwrite an existing configuration file.",
 )
 def init(force: bool) -> None:
-    """Create a default Pygemt configuration file."""
+    """Create a default Pygent configuration file."""
     path = config_path()
 
     if path.exists() and not force:
