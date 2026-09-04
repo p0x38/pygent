@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
 from platformdirs import user_data_dir
+from pydantic import PrivateAttr
 
 from pygent.types import Message
 
@@ -20,6 +22,8 @@ _DEFAULT_FILE_NAME = "memory.json"
 class PersistentConversationMemory(ConversationMemory):
     """Conversation memory persisted to a JSON file."""
 
+    _path: Path = PrivateAttr()
+
     def __init__(
         self,
         conversation_id: str = "default",
@@ -27,9 +31,14 @@ class PersistentConversationMemory(ConversationMemory):
         path: str | Path | None = None,
     ) -> None:
         super().__init__(conversation_id=conversation_id)
-        self.path = Path(path) if path is not None else self.default_path()
+        self._path = Path(path) if path is not None else self.default_path()
         self._load()
         self.set_conversation(conversation_id)
+
+    @property
+    def path(self) -> Path:
+        """Return the file used for persistent storage."""
+        return self._path
 
     @staticmethod
     def default_path() -> Path:
@@ -66,7 +75,9 @@ class PersistentConversationMemory(ConversationMemory):
         payload: dict[str, Any] = {
             "version": 1,
             "history": {
-                conversation_id: [message.model_dump(mode="json") for message in messages]
+                conversation_id: [
+                    message.model_dump(mode="json") for message in messages
+                ]
                 for conversation_id, messages in self.history.items()
             },
         }
@@ -97,14 +108,11 @@ class PersistentConversationMemory(ConversationMemory):
         super().clear()
         self._save()
 
-    def set_conversation(self, conversation_id: str) -> None:
-        super().set_conversation(conversation_id)
-
     def reset_conversation(self, conversation_id: str) -> None:
         super().reset_conversation(conversation_id)
         self._save()
 
-    def seed(self, messages: list[Message]) -> None:
+    def seed(self, messages: Iterable[Message]) -> None:
         super().seed(messages)
         self._save()
 
