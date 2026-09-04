@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -15,6 +15,12 @@ from pygent.exceptions import (
 )
 from pygent.providers.base import Provider
 from pygent.types import Message, ModelResponse, ToolCall, ToolDefinition, Usage
+
+
+def _as_json_object(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ProviderResponseError("expected a JSON object")
+    return cast(dict[str, Any], value)
 
 
 class OpenAICompatibleProvider(Provider):
@@ -110,20 +116,15 @@ class OpenAICompatibleProvider(Provider):
         return self._parse_response(data)
 
     def _parse_response(self, data: Any) -> ModelResponse:
-        if not isinstance(data, dict):
-            raise ProviderResponseError("response must be a JSON object")
+        data = _as_json_object(data)
 
         choices = data.get("choices")
         if not isinstance(choices, list) or not choices:
             raise ProviderResponseError("response is missing 'choices'")
 
-        first = choices[0]
-        if not isinstance(first, dict):
-            raise ProviderResponseError("invalid 'choices[0]' entry")
+        first = _as_json_object(choices[0])
 
-        message_data = first.get("message", {})
-        if not isinstance(message_data, dict):
-            raise ProviderResponseError("invalid 'choices[0].message' entry")
+        message_data = _as_json_object(first.get("message", {}))
 
         content = message_data.get("content")
         if content is not None and not isinstance(content, str):
@@ -152,37 +153,43 @@ class OpenAICompatibleProvider(Provider):
             raise ProviderResponseError("'tool_calls' must be a list")
 
         result: list[ToolCall] = []
-        for index, entry in enumerate(raw, start=1):
-            if not isinstance(entry, dict):
-                raise ProviderResponseError("invalid 'tool_calls' entry")
-            function_data = entry.get("function", {})
-            if not isinstance(function_data, dict):
-                raise ProviderResponseError("invalid 'tool_calls.function' entry")
+        entries = cast(list[Any], raw)
+        for index, entry in enumerate(entries, start=1):
+            entry = _as_json_object(entry)
+            function_data = _as_json_object(entry.get("function", {}))
 
             call_id = entry.get("id") or f"tool-call-{index}"
+            if not isinstance(call_id, str):
+                raise ProviderResponseError("tool call id must be a string")
+
             name = function_data.get("name")
             if not isinstance(name, str) or not name:
                 raise ProviderResponseError("tool call is missing a 'name'")
             arguments = function_data.get("arguments", {})
             if isinstance(arguments, str):
                 try:
-                    arguments = json.loads(arguments) if arguments else {}
+                    parsed_arguments: Any = json.loads(arguments) if arguments else {}
                 except json.JSONDecodeError as exc:
                     raise ProviderResponseError(
                         f"tool call arguments are not valid JSON: {exc}"
                     ) from exc
-            if not isinstance(arguments, dict):
-                raise ProviderResponseError("tool call arguments must be a JSON object")
+                arguments = parsed_arguments
+            arguments = _as_json_object(arguments)
 
-            result.append(ToolCall(id=call_id, name=name, arguments=dict(arguments)))
+            result.append(
+                ToolCall(
+                    id=call_id,
+                    name=name,
+                    arguments=arguments,
+                )
+            )
         return result
 
     @staticmethod
     def _parse_usage(raw: Any) -> Usage | None:
         if raw is None:
             return None
-        if not isinstance(raw, dict):
-            raise ProviderResponseError("'usage' must be a JSON object")
+        raw = _as_json_object(raw)
 
         def _int(name: str) -> int:
             value = raw.get(name)

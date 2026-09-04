@@ -9,6 +9,14 @@ from pygent.memory.base import Memory
 from pygent.types import Message
 
 
+def _message_list_factory() -> list[Message]:
+    return []
+
+
+def _message_history_factory() -> dict[str, list[Message]]:
+    return {}
+
+
 class ConversationMemory(Memory, BaseModel):
     """Simple in-memory conversation store with conversation IDs.
 
@@ -19,8 +27,8 @@ class ConversationMemory(Memory, BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     conversation_id: str = "default"
-    history: dict[str, list[Message]] = Field(default_factory=dict)
-    current_messages: list[Message] = Field(default_factory=list)
+    history: dict[str, list[Message]] = Field(default_factory=_message_history_factory)
+    current_messages: list[Message] = Field(default_factory=_message_list_factory)
 
     def add(self, message: Message) -> None:
         self.current_messages.append(message)

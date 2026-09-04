@@ -9,6 +9,10 @@ from pygent.types.usage import Usage
 Role = Literal["system", "user", "assistant", "tool"]
 
 
+def _tool_call_list_factory() -> list[ToolCall]:
+    return []
+
+
 class ToolCall(BaseModel):
     """A request from a model to execute a registered tool."""
 
@@ -27,7 +31,7 @@ class Message(BaseModel):
     role: Role
     content: str | None = None
     name: str | None = None
-    tool_calls: list[ToolCall] = Field(default_factory=list)
+    tool_calls: list[ToolCall] = Field(default_factory=_tool_call_list_factory)
     tool_call_id: str | None = None
 
 
@@ -37,6 +41,6 @@ class ModelResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     content: str | None = None
-    tool_calls: list[ToolCall] = Field(default_factory=list)
+    tool_calls: list[ToolCall] = Field(default_factory=_tool_call_list_factory)
     finish_reason: str | None = None
     usage: Usage | None = None

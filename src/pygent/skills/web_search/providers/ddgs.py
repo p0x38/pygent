@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 
 class SearchProvider(Protocol):
@@ -21,10 +22,19 @@ class SearchResult:
     snippet: str
 
 
+class DDGSClient(Protocol):
+    def text(
+        self,
+        query: str,
+        *,
+        max_results: int,
+    ) -> Iterable[Mapping[str, Any]]: ...
+
+
 class DDGSSearchProvider:
     """Search provider backed by the optional ``duckduckgo_search`` package."""
 
-    def __init__(self, *, client: Any | None = None) -> None:
+    def __init__(self, *, client: DDGSClient | None = None) -> None:
         if client is None:
             try:
                 from duckduckgo_search import DDGS  # type: ignore[import-not-found]
@@ -32,12 +42,11 @@ class DDGSSearchProvider:
                 raise ImportError(
                     "DDGS support requires 'duckduckgo-search' (or pass a client)."
                 ) from exc
-            client = DDGS()
+            client = cast(DDGSClient, DDGS())
         self.client = client
 
     async def search(self, query: str, *, limit: int) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
-        assert self.client is not None
         for entry in self.client.text(query, max_results=limit):
             results.append(
                 {

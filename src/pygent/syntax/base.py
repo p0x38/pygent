@@ -4,14 +4,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+
+
+def _metadata_factory() -> dict[str, object]:
+    return {}
 
 
 @dataclass(slots=True)
 class SyntaxContext:
     """Context supplied to a syntax handler."""
 
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=_metadata_factory)
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,7 +23,7 @@ class SyntaxResult:
 
     text: str = ""
     handled: bool = True
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=_metadata_factory)
 
 
 class SyntaxHandler(ABC):

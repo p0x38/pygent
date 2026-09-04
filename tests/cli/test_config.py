@@ -49,15 +49,15 @@ def test_config_get_secret_is_masked(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_config_list(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("PYGENT_TEST_VALUE", "hello")
+    monkeypatch.setenv("PYGENT_MODEL", "test-model")
     monkeypatch.setenv("OPENROUTER_API_KEY", "super-secret")
 
     runner = CliRunner()
     result = runner.invoke(main, ["config", "list"])
 
     assert result.exit_code == 0
-    assert "PYGENT_TEST_VALUE=hello" in result.output
-    assert "OPENROUTER_API_KEY=********" in result.output
+    assert "Model: test-model" in result.output
+    assert "API key: ********" in result.output
     assert "super-secret" not in result.output
 
 
@@ -89,7 +89,7 @@ def test_init_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
-        "pygent.config.config_path",
+        "pygent.config.loader.config_path",
         lambda: config_file,
     )
 
@@ -110,7 +110,7 @@ def test_init_config_refuses_overwrite(
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
-        "pygent.config.config_path",
+        "pygent.config.loader.config_path",
         lambda: config_file,
     )
 
@@ -126,7 +126,7 @@ def test_init_config_force_overwrites(
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
-        "pygent.config.config_path",
+        "pygent.config.loader.config_path",
         lambda: config_file,
     )
 
@@ -146,7 +146,7 @@ def test_config_init(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_file = tmp_path / "pygent" / "config.toml"
 
     monkeypatch.setattr(
-        "pygent.config.config_path",
+        "pygent.config.loader.config_path",
         lambda: config_file,
     )
 

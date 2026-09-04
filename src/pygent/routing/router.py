@@ -18,7 +18,7 @@ class Router(Provider):
 
     def __init__(
         self,
-        entries: Sequence[ProviderEntry] | Sequence[Provider],
+        entries: Sequence[ProviderEntry | Provider],
         *,
         strategy: SelectionStrategy | None = None,
     ) -> None:
@@ -29,13 +29,9 @@ class Router(Provider):
         for entry in entries:
             if isinstance(entry, ProviderEntry):
                 normalized.append(entry)
-            elif isinstance(entry, Provider):
+            else:
                 normalized.append(
                     ProviderEntry(name=type(entry).__name__, provider=entry)
-                )
-            else:
-                raise TypeError(
-                    "router entries must be Provider or ProviderEntry instances"
                 )
 
         self.entries: list[ProviderEntry] = normalized

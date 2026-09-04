@@ -10,13 +10,17 @@ from pygent.syntax.parser import ParsedInput, SyntaxParser
 from pygent.syntax.registry import SyntaxRegistry
 
 
+def _metadata_factory() -> dict[str, object]:
+    return {}
+
+
 @dataclass(slots=True)
 class ProcessedInput:
     """Input after syntax handlers have processed its invocations."""
 
     text: str
     results: tuple[SyntaxResult, ...] = ()
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=_metadata_factory)
 
 
 class SyntaxProcessor:
