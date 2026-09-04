@@ -1,5 +1,20 @@
 # AGENTS.md
 
+## TODO.md Format
+
+AI agents writing or editing any `TODO.md` file in this repository **must** follow the project's custom TODO specification: see [`custom-todo-specification.md`](custom-todo-specification.md) for the full grammar.
+
+Key rules agents must apply:
+
+- The first non-whitespace line of any `TODO.md` must be `# TODO` or `# TODO.md`. Never start a TODO file with a different top-level heading (for example, `# TODO.md for pygent`).
+- Tasks are unordered-list items whose content begins with exactly one of `[ ]`, `[x]`, or `[-]`. Plain `- Task` bullets are **not** valid tasks.
+- Sections are Markdown subheaders (`##`, `###`, …) below the top-level header. Use them to group related tasks.
+- Subtasks use standard Markdown indentation (two spaces is the convention here).
+- Use `@username` to assign a task and `#tag` to categorise one. Metadata may appear anywhere in the task text; the rest is the task description.
+- Anything that is not a recognised task or section heading is informational content and is allowed (and expected) for context, notes, or descriptions.
+- Multiple `TODO.md` files may exist at different levels of the repository; the same rules apply to each one.
+- When a commit changes a task's status, update the corresponding `TODO.md` in the same commit (see `## Commits and Pull Requests` below).
+
 ## Project
 
 Pygentix (`pygent`) is a modular, provider-agnostic AI agent framework for Python 3.12+.
@@ -44,7 +59,7 @@ Keep the summary focused on the largest change in the commit. Use a scope when i
 
 Work should normally be developed on a feature branch and submitted through a pull request rather than committed directly to `main`.
 
-Update `TODO.md` whenever a commit changes the project's task status. Prefer including the TODO update in the same commit as the related implementation or test change.
+Update `TODO.md` whenever a commit changes the project's task status. Prefer including the TODO update in the same commit as the related implementation or test change. Edits to `TODO.md` must follow the format defined in `## TODO.md Format` above.
 
 ## Verification
 
