@@ -55,8 +55,6 @@ class PersistentConversationMemory(ConversationMemory):
         except (OSError, json.JSONDecodeError) as exc:
             raise ValueError(f"Could not load memory file: {self.path}") from exc
 
-        data = json.loads(self.path.read_text(encoding="utf-8"))
-
         if not isinstance(data, dict):
             raise ValueError(f"Invalid memory file: {self.path}")
 
