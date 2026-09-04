@@ -296,3 +296,19 @@ Pygent development tasks and roadmap.
 - [ ] Agent hooks/lifecycle events
 - [ ] Better tracing/observability integration
 - [ ] Plugin/extension system
+
+### Configuration and CLI
+
+- [ ] Username configuration
+  - [ ] `user.username` configuration field
+  - [ ] Environment-variable override
+  - [ ] CLI display
+  - [ ] Configuration tests
+
+- [ ] CLI memory management
+  - [ ] `memory list`
+  - [ ] `memory get`
+  - [ ] `memory clear`
+  - [ ] `memory reset`
+  - [ ] `memory export`
+  - [ ] `memory import`
