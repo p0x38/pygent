@@ -90,7 +90,56 @@ Pygent development tasks and roadmap.
   - [ ] Expose delay behavior through configuration/API
   - [ ] Add deterministic tests using injected clocks/sleepers
 
-### 3. Web Search and Browser Completion
+### 3. Prompt and Agent Instructions
+
+- [ ] Custom system-prompt support
+  - [ ] Accept a custom system prompt from the Python API
+  - [ ] Allow replacing or extending the built-in system prompt
+  - [ ] Define precedence between built-in and user-provided prompts
+  - [ ] Preserve system prompts correctly during context truncation
+  - [ ] Add prompt composition tests
+- [ ] CLI prompt customization
+  - [ ] Add a CLI option for a one-off system/custom prompt
+  - [ ] Add a CLI option for loading a prompt from a file
+  - [ ] Support stdin-based prompt input where practical
+  - [ ] Define precedence between CLI prompt, config, and context files
+  - [ ] Add CLI tests
+- [ ] `SOUL.md` support
+  - [ ] Support an instance/global `SOUL.md` for durable agent identity
+  - [ ] Allow configurable location for the global soul file
+  - [ ] Provide a safe default location using the existing Pygent data directory
+  - [ ] Fall back to the built-in identity when the file is missing or empty
+  - [ ] Define size limits and truncation behavior
+  - [ ] Add loading and fallback tests
+- [ ] `AGENTS.md` support
+  - [ ] Discover `AGENTS.md` from the working directory
+  - [ ] Walk toward the repository root when appropriate
+  - [ ] Support nested directory-specific instruction files
+  - [ ] Define ordering and precedence for multiple instruction files
+  - [ ] Keep project instructions separate from global identity
+  - [ ] Define size limits and truncation behavior
+  - [ ] Add discovery and merge tests
+- [ ] Additional coding-agent instruction file compatibility
+  - [ ] Consider `.hermes.md` / `HERMES.md` compatibility
+  - [ ] Consider `CLAUDE.md` compatibility
+  - [ ] Consider `.cursorrules` / `.cursor/rules/*.mdc` compatibility
+  - [ ] Define which formats are supported officially versus best-effort
+  - [ ] Avoid loading conflicting instruction sources twice
+- [ ] Prompt source resolution and security
+  - [ ] Define deterministic prompt-source precedence
+  - [ ] Distinguish identity, project instructions, and per-invocation prompts
+  - [ ] Prevent accidental prompt duplication
+  - [ ] Apply bounded file-size limits before prompt injection
+  - [ ] Handle unreadable/invalid prompt files without crashing the agent
+  - [ ] Add regression tests for conflicting prompt sources
+- [ ] Prompt presets / session-level instruction overlays
+  - [ ] Support named prompt/personality presets
+  - [ ] Allow temporary session-level overlays without modifying persistent files
+  - [ ] Define replace versus append behavior
+  - [ ] Add CLI commands/options for selecting presets
+  - [ ] Add persistence and precedence tests
+
+### 4. Web Search and Browser Completion
 
 - [ ] Link clicking
 - [ ] Text finding
@@ -100,7 +149,7 @@ Pygent development tasks and roadmap.
 - [ ] Browser resource cleanup
 - [ ] Search/browser agent tools
 
-### 4. API Stabilization
+### 5. API Stabilization
 
 - [ ] Review all public exports
 - [ ] Review naming consistency
@@ -112,7 +161,7 @@ Pygent development tasks and roadmap.
 - [ ] Define backwards-compatibility policy
 - [ ] Remove experimental APIs that should not be public
 
-### 5. Documentation and Examples
+### 6. Documentation and Examples
 
 - [ ] Installation documentation
 - [ ] Quick-start documentation
@@ -134,8 +183,9 @@ Pygent development tasks and roadmap.
 - [ ] Cancellation/timeout documentation
 - [ ] API reference
 - [ ] Keep README feature/status tables synchronized with implementation
+- [ ] Prompt customization and context-file documentation
 
-### 6. CI and Packaging
+### 7. CI and Packaging
 
 - [ ] Python 3.13 CI coverage
 - [ ] Test multiple operating systems where practical
@@ -150,7 +200,7 @@ Pygent development tasks and roadmap.
 - [x] Fix Ruff/isort import sorting locally
 - [x] Verify CI passes after local Ruff fixes
 
-### 7. Alpha Release
+### 8. Alpha Release
 
 - [ ] Final API review
 - [x] Final test suite pass
@@ -244,6 +294,7 @@ Pygent development tasks and roadmap.
 
 - [ ] Core correctness
 - [ ] Usage and observability
+- [ ] Prompt and agent instructions
 - [ ] Web search / browser completion
 - [ ] API stabilization
 - [ ] Documentation and examples
@@ -275,3 +326,5 @@ Pygent development tasks and roadmap.
 - [ ] Plugin/extension system
 - [ ] MCP server support
 - [ ] ACP server support
+- [ ] Node.js integration where it provides a clear capability or ecosystem benefit
+- [ ] Rust integration where it provides a clear performance or systems-level benefit
