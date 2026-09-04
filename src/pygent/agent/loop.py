@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 
 from pygent.agent.context import AgentContext
 from pygent.agent.events import AgentEvent
@@ -55,18 +55,72 @@ class AgentLoop:
             raise asyncio.CancelledError("agent cancellation requested")
 
     def _prepare_messages(self, messages: list[Message]) -> list[Message]:
-        """Keep the system prompt and newest messages within the configured bound."""
-        if (
-            self.max_context_messages is None
-            or len(messages) <= self.max_context_messages
-        ):
-            return messages
+        """Build a truncated copy of ``messages`` safe for the provider.
+
+        Tool-call exchanges (assistant ``tool_calls`` and their matching
+        ``tool`` results) are kept atomically: a ``tool`` message is never
+        sent without its corresponding assistant tool call, and an
+        assistant tool-call message is never sent without **all** of its
+        corresponding tool results (including when an assistant emits
+        multiple tool calls in one response).
+
+        System messages are preserved first, mirroring the previous
+        behavior. The original ``messages`` list is never mutated.
+        """
+        if self.max_context_messages is None:
+            return list(messages)
+
+        # Fast path: when the messages already fit the budget *and* are
+        # tool-call-safe, return a shallow copy without further work.
+        if len(messages) <= self.max_context_messages:
+            candidate = list(messages)
+            if _is_tool_call_safe(candidate):
+                return candidate
+            # Otherwise fall through to the safe truncation path: the
+            # conversation is internally inconsistent (orphan tool
+            # messages / unanswered tool calls) and needs cleanup.
+
         system = [message for message in messages if message.role == "system"]
         non_system = [message for message in messages if message.role != "system"]
+
         keep = self.max_context_messages - len(system)
         if keep <= 0:
-            return system[: self.max_context_messages]
-        return [*system, *non_system[-keep:]]
+            # No room for any non-system message after the system slice;
+            # never return an incomplete tool exchange.
+            return list(system[: self.max_context_messages])
+
+        prepared_non_system = self._truncate_non_system(non_system, keep)
+        return [*system, *prepared_non_system]
+
+    @staticmethod
+    def _truncate_non_system(non_system: list[Message], keep: int) -> list[Message]:
+        """Return a tool-call-aware suffix of ``non_system``.
+
+        The algorithm walks ``non_system`` backwards and tracks the
+        ``tool_call_id`` set that must remain paired. When a budget cut
+        would orphan a tool call or tool result, the offending exchange
+        is dropped atomically from the *front* of the kept window so the
+        trailing messages stay self-consistent.
+        """
+        if keep <= 0 or not non_system:
+            return []
+
+        # First pass: take the newest ``keep`` messages, but expand backward
+        # whenever a tool message or assistant tool-call message would be
+        # left without its counterpart(s). This guarantees the kept slice
+        # is internally consistent before we apply the budget cap.
+        consistent = _ToolExchangeWindow.from_tail(non_system)
+
+        # Second pass: if the consistent window is still longer than the
+        # budget, drop complete exchanges from the front until we fit. We
+        # never split an exchange here.
+        window = list(consistent)
+        while len(window) > keep:
+            if not _drop_oldest_exchange(window):
+                # Defensive: should not happen because ``consistent`` is
+                # already exchange-aligned, but bail out safely.
+                break
+        return window
 
     def _too_many_tool_calls(self, count: int) -> bool:
         return self.max_tool_calls is not None and count >= self.max_tool_calls
@@ -237,3 +291,195 @@ class AgentLoop:
             iteration=self.max_iterations,
             error=f"Agent loop exceeded maximum iterations ({self.max_iterations})",
         )
+
+
+def _is_tool_call_safe(messages: list[Message]) -> bool:
+    """Return ``True`` iff every tool message has a parent assistant
+    tool call and every assistant tool call has a matching tool
+    result, with no nested assistant tool-call messages.
+
+    Used by the fast path in :meth:`AgentLoop._prepare_messages` so a
+    safe conversation that already fits the budget isn't rewritten.
+    """
+    pending_assistant_calls: set[str] = set()
+    for message in messages:
+        if message.role == "assistant" and message.tool_calls:
+            call_ids = {call.id for call in message.tool_calls}
+            if call_ids & pending_assistant_calls:
+                return False
+            pending_assistant_calls = set(call_ids)
+        elif message.role == "tool":
+            if not pending_assistant_calls:
+                return False
+            if message.tool_call_id not in pending_assistant_calls:
+                return False
+            pending_assistant_calls.discard(message.tool_call_id)
+    return not pending_assistant_calls
+
+
+def _drop_oldest_exchange(window: list[Message]) -> bool:
+    """Drop the oldest exchange from ``window`` in place.
+
+    An "exchange" starts at the oldest message that begins a logical
+    unit of conversation: either a ``user`` message, an assistant
+    message with ``tool_calls``, an orphan ``tool`` message, or any
+    other non-system message. Messages belonging to the same exchange
+    (its assistant tool-call message and all of its tool results) are
+    dropped together so the remainder stays self-consistent.
+
+    Returns ``True`` if a message was removed, ``False`` if the window
+    is empty.
+    """
+    if not window:
+        return False
+
+    front = window[0]
+
+    # Orphan tool message at the head: nothing to pair it with above.
+    # Drop only the orphaned tool(s) until we find a message that can
+    # anchor an exchange.
+    if front.role == "tool":
+        del window[0]
+        return True
+
+    # Find the end index (exclusive) of the oldest exchange starting at
+    # index 0. The exchange is:
+    #   - a user message (length 1),
+    #   - an assistant message without tool_calls (length 1), or
+    #   - an assistant(tool_calls=[...]) followed by all of its tool
+    #     results, possibly followed by additional non-tool text from
+    #     the same assistant turn.
+    end = _exchange_end(window, 0)
+    if end <= 0:
+        # Should not happen, but stay defensive.
+        del window[0]
+        return True
+    del window[:end]
+    return True
+
+
+def _exchange_end(window: list[Message], start: int) -> int:
+    """Return the exclusive index of the message after the exchange at
+    ``start``.
+
+    If the exchange starts with an assistant message carrying
+    ``tool_calls``, the exchange includes every following ``tool``
+    message whose ``tool_call_id`` matches one of those calls.
+    """
+    if start >= len(window):
+        return start
+    head = window[start]
+    if head.role != "assistant" or not head.tool_calls:
+        return start + 1
+    expected = {call.id for call in head.tool_calls}
+    end = start + 1
+    while end < len(window) and window[end].role == "tool":
+        if window[end].tool_call_id in expected:
+            end += 1
+        else:
+            break
+    return end
+
+
+class _ToolExchangeWindow:
+    """Build a tool-call-aware suffix of non-system messages.
+
+    Walking backwards from the tail, we track two sets:
+
+    * ``pending_results``: ``tool_call_id`` values for which we still
+      need to find a matching ``tool`` message (because we've seen the
+      assistant tool call but not its result yet).
+    * ``orphan_tools``: ``tool_call_id`` values for ``tool`` messages
+      that have no preceding assistant tool call in the kept window.
+
+    The walk finishes when both sets are empty (a self-consistent
+    suffix) or when we exhaust the input. The resulting slice is then
+    returned in its original order.
+    """
+
+    __slots__ = ("_messages",)
+
+    def __init__(self, messages: list[Message]) -> None:
+        self._messages = messages
+
+    @classmethod
+    def from_tail(cls, messages: Iterable[Message]) -> list[Message]:
+        window = cls(list(messages))
+        return window._build()
+
+    def _build(self) -> list[Message]:
+        kept: list[Message] = []
+        pending_results: set[str] = set()
+        orphan_tools: set[str] = set()
+        for message in reversed(self._messages):
+            role = message.role
+            if role == "tool":
+                tool_call_id = message.tool_call_id
+                if tool_call_id is None:
+                    # A ``tool`` message without an id can never be
+                    # matched. Keep it (best-effort) but never let it
+                    # drag more messages with it.
+                    kept.append(message)
+                    continue
+                if tool_call_id in pending_results:
+                    pending_results.discard(tool_call_id)
+                    kept.append(message)
+                    continue
+                # We have not yet seen the parent assistant tool call.
+                # Stash as an orphan; we'll either find the parent as
+                # we walk further back, or drop the orphan if we don't.
+                orphan_tools.add(tool_call_id)
+                kept.append(message)
+                continue
+            if role == "assistant" and message.tool_calls:
+                call_ids = {call.id for call in message.tool_calls}
+                if call_ids <= pending_results:
+                    # Every tool call already has a matching result.
+                    pending_results -= call_ids
+                    kept.append(message)
+                    continue
+                if call_ids <= orphan_tools:
+                    # The orphan tool messages we kept belong to this
+                    # assistant. They are now paired and stop being
+                    # orphans.
+                    orphan_tools -= call_ids
+                    kept.append(message)
+                    continue
+                # This assistant refers to tool calls we have not seen
+                # at all (they were already truncated from the front of
+                # the conversation). Drop the assistant *and* any orphan
+                # tool messages that referenced it.
+                orphan_tools -= call_ids
+                kept = [
+                    m
+                    for m in kept
+                    if not (m.role == "tool" and m.tool_call_id in call_ids)
+                ]
+                continue
+            # user / assistant without tool_calls / anything else.
+            kept.append(message)
+
+        # Defensive: if we somehow still have unresolved ids, drop the
+        # matching orphan tool messages so the result is self-consistent.
+        if orphan_tools:
+            kept = [
+                m
+                for m in kept
+                if not (m.role == "tool" and m.tool_call_id in orphan_tools)
+            ]
+        if pending_results:
+            # Assistant tool calls without results. Drop the offending
+            # assistant message so the provider never sees an unanswered
+            # tool call.
+            kept = [
+                m
+                for m in kept
+                if not (
+                    m.role == "assistant"
+                    and m.tool_calls
+                    and {c.id for c in m.tool_calls} & pending_results
+                )
+            ]
+
+        kept.reverse()
+        return kept
