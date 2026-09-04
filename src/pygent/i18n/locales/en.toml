@@ -27,6 +27,7 @@ enabled = "Enabled"
 disabled = "Disabled"
 yes = "Yes"
 no = "No"
+infinite = "Infinite"
 
 [config.source]
 env = "env"
@@ -42,9 +43,13 @@ bytes = "bytes"
 [config.duration]
 zero = "0 seconds"
 day = "{count} day"
+days = "{count} days"
 hour = "{count} hour"
+hours = "{count} hours"
 minute = "{count} minute"
+minutes = "{count} minutes"
 second = "{count} second"
+seconds = "{count} seconds"
 
 [config.message]
 none = "No Pygent configuration found."

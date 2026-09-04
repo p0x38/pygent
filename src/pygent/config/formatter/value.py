@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from numbers import Real
+from typing import ClassVar
 
 from pygent.i18n import Translator
 
@@ -18,6 +19,7 @@ class ValueStyle(StrEnum):
     SIZE = "size"
     DURATION = "duration"
     NUMBER = "number"
+    SENTINEL = "sentinel"
 
 
 class ByteBase(StrEnum):
@@ -30,7 +32,7 @@ class ByteBase(StrEnum):
 class ValueFormatter:
     """Format individual configuration values for display."""
 
-    _SIZE_UNITS = {
+    _SIZE_UNITS: ClassVar[dict[str, int]] = {
         "B": 1,
         "KB": 1_000,
         "MB": 1_000_000,
@@ -43,7 +45,7 @@ class ValueFormatter:
         "TiB": 2**40,
         "PiB": 2**50,
     }
-    _DURATION_UNITS = {
+    _DURATION_UNITS: ClassVar[dict[str, float]] = {
         "ms": 0.001,
         "millisecond": 0.001,
         "milliseconds": 0.001,
@@ -96,6 +98,13 @@ class ValueFormatter:
                 return self.size(value, unit=unit, base=byte_base)
             case ValueStyle.DURATION:
                 return self.duration(value, unit=unit)
+            case ValueStyle.SENTINEL:
+                if value == -1:
+                    return self._translator(
+                        "config.value.infinite",
+                        default="Infinite",
+                    )
+                return self.number(value, unit=unit)
             case ValueStyle.NUMBER:
                 return self.number(value, unit=unit)
             case ValueStyle.DEFAULT:
@@ -130,15 +139,26 @@ class ValueFormatter:
         """Coerce string values to common scalar types."""
         if not isinstance(value, str):
             return value
+
         normalized = value.strip()
+
         if normalized.lower() in {"true", "false"}:
             return normalized.lower() == "true"
+
         integer = cls._try_int(normalized)
         if integer is not None:
             return integer
+
+        # Preserve integer-looking strings with leading zeroes.
+        sign = normalized[:1] if normalized[:1] in {"+", "-"} else ""
+        digits = normalized[len(sign) :]
+        if len(digits) > 1 and digits.startswith("0") and digits[1].isdigit():
+            return value
+
         decimal = cls._try_float(normalized)
         if decimal is not None:
             return decimal
+
         return value
 
     @classmethod
@@ -247,6 +267,18 @@ class ValueFormatter:
             )
         return f"{int(result) if result.is_integer() else result:g} {output_unit}"
 
+    def _format_duration_unit(self, unit: str, count: int | float) -> str:
+        """Format a localized duration unit with singular/plural handling."""
+        plural = count != 1
+        key = f"config.duration.{unit}s" if plural else f"config.duration.{unit}"
+        default = f"{{count}} {unit}s" if plural else f"{{count}} {unit}"
+
+        return self._translator(
+            key,
+            default=default,
+            count=count,
+        )
+
     def duration(self, value: object, *, unit: str | None = None) -> str:
         """Format a duration after converting its input unit to seconds."""
         if not isinstance(value, Real):
@@ -255,49 +287,37 @@ class ValueFormatter:
         factor = self._DURATION_UNITS.get(unit or "s")
         if factor is None:
             return self.default(value, unit=unit)
+
         total_seconds = float(value) * factor
 
         if total_seconds < 0:
             return f"-{self.duration(-total_seconds)}"
+
         if total_seconds == 0:
-            return self._translator("config.duration.zero", default="0 seconds")
+            return self._translator(
+                "config.duration.zero",
+                default="0 seconds",
+            )
 
         days, remainder = divmod(total_seconds, 86_400)
         hours, remainder = divmod(remainder, 3_600)
         minutes, seconds = divmod(remainder, 60)
+
         parts: list[str] = []
 
         if days:
-            parts.append(
-                self._translator(
-                    "config.duration.day",
-                    default="{count} day",
-                    count=int(days),
-                )
-            )
+            parts.append(self._format_duration_unit("day", int(days)))
+
         if hours:
-            parts.append(
-                self._translator(
-                    "config.duration.hour",
-                    default="{count} hour",
-                    count=int(hours),
-                )
-            )
+            parts.append(self._format_duration_unit("hour", int(hours)))
+
         if minutes:
-            parts.append(
-                self._translator(
-                    "config.duration.minute",
-                    default="{count} minute",
-                    count=int(minutes),
-                )
-            )
+            parts.append(self._format_duration_unit("minute", int(minutes)))
+
         if seconds:
-            seconds_text = str(int(seconds)) if seconds.is_integer() else f"{seconds:g}"
-            parts.append(
-                self._translator(
-                    "config.duration.second",
-                    default="{count} second",
-                    count=seconds_text,
-                )
-            )
+            seconds_value: int | float
+            seconds_value = int(seconds) if seconds.is_integer() else seconds
+
+            parts.append(self._format_duration_unit("second", seconds_value))
+
         return " ".join(parts)

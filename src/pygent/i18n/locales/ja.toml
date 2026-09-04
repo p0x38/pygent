@@ -15,9 +15,9 @@ mention = "メンション接頭辞"
 command = "コマンド接頭辞"
 keep_alive = "キープアライブ"
 llm_library = "LLMライブラリ"
-max_loaded_models = "ロード済みモデル数の上限"
+max_loaded_models = "ロードできるモデル数の上限"
 parallel_requests = "並列リクエスト数"
-vulkan = "Vulkan"
+vulkan = "Vulkanを使用"
 api_key = "APIキー"
 base_url = "ベースURL"
 
@@ -27,6 +27,7 @@ enabled = "有効"
 disabled = "無効"
 yes = "はい"
 no = "いいえ"
+infinite = "無期限"
 
 [config.source]
 env = "環境変数"
@@ -42,9 +43,13 @@ bytes = "バイト"
 [config.duration]
 zero = "0秒"
 day = "{count}日"
+days = "{count}日"
 hour = "{count}時間"
+hours = "{count}時間"
 minute = "{count}分"
+minutes = "{count}分"
 second = "{count}秒"
+seconds = "{count}秒"
 
 [config.message]
 none = "Pygentの設定が見つかりません。"

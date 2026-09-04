@@ -65,9 +65,12 @@ class ConsoleFormatter(ConfigFormatter):
         visit(values)
         return "\n".join(lines)
 
-    def _section_name(self, path: str) -> str:
-        """Format a TOML section path."""
-        return ".".join(self._labels.section(part) for part in path.split("."))
+    def _section_name(self, path: tuple[str, ...] | str) -> str:
+        """Translate and format a configuration section path."""
+        if isinstance(path, str):
+            path = tuple(path.split("."))
+
+        return " > ".join(self._labels.section(part) for part in path)
 
     def _format_toml_field(self, key: str, value: TomlValue) -> str:
         """Format one TOML field."""
@@ -122,7 +125,9 @@ class ConsoleFormatter(ConfigFormatter):
             ]
         )
 
-    def all(self, environment: Mapping[str, str], config: Mapping[str, TomlValue]) -> str:
+    def all(
+        self, environment: Mapping[str, str], config: Mapping[str, TomlValue]
+    ) -> str:
         """Format environment variables and configuration file values."""
         sections: list[str] = []
         if environment:

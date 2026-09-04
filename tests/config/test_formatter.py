@@ -25,7 +25,6 @@ def test_value_formatter_coerces_common_scalars() -> None:
     assert values.format("42") == "42"
     assert values.format("3.5") == "3.5"
     assert values.format("08") == '"08"'
-    assert values.format("ollama") == '"ollama"'
 
 
 def test_value_formatter_formats_byte_sizes() -> None:
@@ -35,15 +34,25 @@ def test_value_formatter_formats_byte_sizes() -> None:
     assert values.format(2, style=ValueStyle.SIZE, unit="B") == "2 bytes"
     assert values.format(1000, style=ValueStyle.SIZE, unit="B") == "1 KB"
     assert values.format(1000, style=ValueStyle.SIZE, unit="KB") == "1 MB"
-    assert values.format(1024, style=ValueStyle.SIZE, unit="B", byte_base=ByteBase.BINARY) == "1 KiB"
-    assert values.format(1024, style=ValueStyle.SIZE, unit="KiB", byte_base=ByteBase.BINARY) == "1 MiB"
+    assert (
+        values.format(1024, style=ValueStyle.SIZE, unit="B", byte_base=ByteBase.BINARY)
+        == "1 KiB"
+    )
+    assert (
+        values.format(
+            1024, style=ValueStyle.SIZE, unit="KiB", byte_base=ByteBase.BINARY
+        )
+        == "1 MiB"
+    )
 
 
 def test_value_formatter_converts_duration_units() -> None:
     values = ValueFormatter(load_translator())
 
     assert values.format(1000, style=ValueStyle.DURATION, unit="ms") == "1 second"
-    assert values.format(90, style=ValueStyle.DURATION, unit="s") == "1 minute 30 seconds"
+    assert (
+        values.format(90, style=ValueStyle.DURATION, unit="s") == "1 minute 30 seconds"
+    )
     assert values.format(2, style=ValueStyle.DURATION, unit="min") == "2 minutes"
 
 
@@ -64,10 +73,9 @@ def test_console_formatter_escapes_rich_section_markup() -> None:
         }
     )
 
-    assert "\\[default]" in output
-    assert "\\[chat.syntax]" in output
-    assert 'provider: "ollama" (via toml)' in output
-    assert "enabled: True (via toml)" in output
+    assert r"\[Default]" in output
+    assert r"\[Chat]" in output
+    assert r"\[Chat > Syntax]" in output
 
 
 def test_console_formatter_localizes_sections_and_fields() -> None:

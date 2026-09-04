@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any, cast
 
 import click
 
@@ -17,12 +18,17 @@ from ..ui.console import console
 
 
 def _get_translator(ctx: click.Context) -> Translator:
-    """Return the translator configured by the root CLI context."""
+    """Get the translator from the root Click context."""
     root = ctx.find_root()
-    if isinstance(root.obj, dict):
-        translator = root.obj.get("translator")
-        if isinstance(translator, Translator):
-            return translator
+    obj = cast(dict[str, Any] | None, root.obj)
+
+    if obj is None:
+        return load_translator()
+
+    translator = obj.get("translator")
+    if isinstance(translator, Translator):
+        return translator
+
     return load_translator()
 
 
@@ -93,7 +99,11 @@ def list_config(ctx: click.Context) -> None:
     translator = _get_translator(ctx)
     if not environment and not config_values:
         console.print(
-            f"[dim]{translator('config.message.none', default='No Pygent configuration found.')}[/dim]"
+            f"[dim]{
+                translator(
+                    'config.message.none', default='No Pygent configuration found.'
+                )
+            }[/dim]"
         )
         return
 

@@ -50,3 +50,13 @@ class ConfigLabels:
             f"config.unit.{name}",
             default=name,
         )
+
+    def duration(self, name: str, count: int) -> str:
+        """Translate a configuration duration unit."""
+        key = name if count == 1 else f"{name}s"
+
+        return self._translator(
+            f"config.duration.{key}",
+            default=f"{count} {key}",
+            count=count,
+        )

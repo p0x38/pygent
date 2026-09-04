@@ -43,8 +43,8 @@ def test_config_list(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENROUTER_API_KEY", "super-secret")
     result = CliRunner().invoke(main, ["config", "list"])
     assert result.exit_code == 0
-    assert "Model: \"test-model\"" in result.output
-    assert "API key: \"********\"" in result.output
+    assert 'Model: "test-model"' in result.output
+    assert 'API key: "********"' in result.output
     assert "super-secret" not in result.output
 
 
