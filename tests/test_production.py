@@ -7,8 +7,7 @@ import pytest
 from pygent.production import CancellationToken, cancellable_gather
 
 
-@pytest.mark.asyncio
-async def test_cancellation_token() -> None:
+def test_cancellation_token() -> None:
     token = CancellationToken()
     assert not token.cancelled
     token.cancel()

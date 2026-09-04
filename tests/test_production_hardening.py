@@ -60,9 +60,13 @@ async def test_cancellable_gather_cancels_pending_tasks_after_one_completes() ->
         await asyncio.sleep(0.01)
         token.cancel()
 
-    asyncio.create_task(cancel_later())
-    with pytest.raises(asyncio.CancelledError):
-        await cancellable_gather(fast(), slow(), cancellation=token)
+    cancel_task = asyncio.create_task(cancel_later())
+
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await cancellable_gather(fast(), slow(), cancellation=token)
+    finally:
+        await cancel_task
 
     assert cancelled.is_set()
 
@@ -95,7 +99,7 @@ def test_provider_retry_classification() -> None:
 async def test_retry_async_retries_transient_error() -> None:
     attempts = 0
 
-    async def operation() -> str:
+    async def operation() -> str:  # ruff: ignore[unused-async]
         nonlocal attempts
         attempts += 1
         if attempts < 3:
@@ -115,7 +119,7 @@ async def test_retry_async_retries_transient_error() -> None:
 async def test_retry_async_does_not_retry_permanent_error() -> None:
     attempts = 0
 
-    async def operation() -> None:
+    async def operation() -> None:  # ruff: ignore[unused-async]
         nonlocal attempts
         attempts += 1
         raise ProviderRequestError("bad request", status_code=400)
@@ -133,7 +137,7 @@ async def test_retry_async_does_not_retry_permanent_error() -> None:
 async def test_retry_async_honors_cancellation() -> None:
     token = CancellationToken()
 
-    async def operation() -> None:
+    async def operation() -> None:  # ruff: ignore[unused-async]
         raise ProviderConnectionError("temporary")
 
     token.cancel()

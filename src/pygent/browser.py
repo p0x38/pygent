@@ -33,28 +33,32 @@ class Browser:
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("url must be an absolute HTTP(S) URL")
 
-        async with httpx.AsyncClient(
-            timeout=self.timeout,
-            follow_redirects=True,
-        ) as client:
-            async with client.stream(
+        async with (
+            httpx.AsyncClient(
+                timeout=self.timeout,
+                follow_redirects=True,
+            ) as client,
+            client.stream(
                 "GET",
                 url,
                 headers={"User-Agent": "pygent/0.2"},
-            ) as response:
-                response.raise_for_status()
-                chunks: list[bytes] = []
-                size = 0
-                async for chunk in response.aiter_bytes():
-                    size += len(chunk)
-                    if size > self.max_bytes:
-                        raise ValueError("response exceeds browser max_bytes limit")
-                    chunks.append(chunk)
+            ) as response,
+        ):
+            response.raise_for_status()
+            chunks: list[bytes] = []
+            size = 0
+            async for chunk in response.aiter_bytes():
+                size += len(chunk)
+                if size > self.max_bytes:
+                    raise ValueError("response exceeds browser max_bytes limit")
+                chunks.append(chunk)
 
-                content = b"".join(chunks).decode(response.encoding or "utf-8", errors="replace")
-                return BrowserPage(
-                    url=str(response.url),
-                    content=content,
-                    status_code=response.status_code,
-                    content_type=response.headers.get("content-type"),
-                )
+            content = b"".join(chunks).decode(
+                response.encoding or "utf-8", errors="replace"
+            )
+            return BrowserPage(
+                url=str(response.url),
+                content=content,
+                status_code=response.status_code,
+                content_type=response.headers.get("content-type"),
+            )

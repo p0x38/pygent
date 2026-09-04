@@ -90,8 +90,8 @@ class ToolDefinition(BaseModel):
         if schema.type not in (None, "object"):
             raise ValueError("tool parameter schema must describe an object")
 
-        properties = schema.properties or {}
-        required = schema.required
+        properties: dict[str, JsonSchema] = schema.properties or {}
+        required: list[str] = schema.required
 
         missing = [name for name in required if name not in arguments]
 
@@ -129,10 +129,10 @@ def _validate_value(
     if expected_type is None:
         return
 
-    valid = {
+    valid: dict[JsonSchemaType, bool] = {
         "string": isinstance(value, str),
-        "integer": (isinstance(value, int) and not isinstance(value, bool)),
-        "number": (isinstance(value, (int, float)) and not isinstance(value, bool)),
+        "integer": isinstance(value, int) and not isinstance(value, bool),
+        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
         "boolean": isinstance(value, bool),
         "array": isinstance(value, list),
         "object": isinstance(value, dict),

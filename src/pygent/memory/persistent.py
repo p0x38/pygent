@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from platformdirs import user_data_dir
 from pydantic import PrivateAttr
@@ -54,21 +55,33 @@ class PersistentConversationMemory(ConversationMemory):
         except (OSError, json.JSONDecodeError) as exc:
             raise ValueError(f"Could not load memory file: {self.path}") from exc
 
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+
         if not isinstance(data, dict):
             raise ValueError(f"Invalid memory file: {self.path}")
 
-        history = data.get("history", {})
-        if not isinstance(history, dict):
+        data = cast(dict[str, Any], data)
+
+        raw_history = data.get("history", {})
+
+        if not isinstance(raw_history, dict):
             raise ValueError(f"Invalid memory history: {self.path}")
 
+        history = cast(dict[object, object], raw_history)
+
         self.history = {}
+
         for conversation_id, raw_messages in history.items():
-            if not isinstance(conversation_id, str) or not isinstance(
-                raw_messages, list
-            ):
+            if not isinstance(conversation_id, str):
                 raise ValueError(f"Invalid memory conversation: {self.path}")
+
+            if not isinstance(raw_messages, list):
+                raise ValueError(f"Invalid memory conversation: {self.path}")
+
+            messages = cast(list[object], raw_messages)
+
             self.history[conversation_id] = [
-                Message.model_validate(message) for message in raw_messages
+                Message.model_validate(message) for message in messages
             ]
 
     def _save(self) -> None:
@@ -94,10 +107,8 @@ class PersistentConversationMemory(ConversationMemory):
                 file.write("\n")
             os.replace(temporary_path, self.path)
         except Exception:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temporary_path)
-            except OSError:
-                pass
             raise
 
     def add(self, message: Message) -> None:

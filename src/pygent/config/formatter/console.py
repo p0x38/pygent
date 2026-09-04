@@ -142,6 +142,11 @@ class ConsoleFormatter(ConfigFormatter):
         def get(name: str) -> str:
             return values.get(name, "Not set")
 
+        vulkan_value = self._values.format(
+            get("OLLAMA_VULKAN"),
+            style=ValueStyle.ENABLED,
+        )
+
         source = self._labels.source("env")
         return "\n".join(
             [
@@ -168,7 +173,7 @@ class ConsoleFormatter(ConfigFormatter):
                 ),
                 (
                     f"{self._labels.field('vulkan')}: "
-                    f"{self._values.format(get('OLLAMA_VULKAN'), style=ValueStyle.ENABLED)}"
+                    f"{vulkan_value}"
                     f"{self._source_suffix(source)}"
                 ),
             ]

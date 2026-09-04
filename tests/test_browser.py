@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import httpx
 import pytest
 
@@ -7,7 +9,9 @@ from pygent.browser import Browser
 
 
 @pytest.mark.asyncio
-async def test_browser_fetches_and_follows_redirects(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_browser_fetches_and_follows_redirects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/redirect":
             return httpx.Response(302, headers={"Location": "/page"})
@@ -30,7 +34,7 @@ async def test_browser_fetches_and_follows_redirects(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.asyncio
 async def test_browser_rejects_non_http_url() -> None:
-    with pytest.raises(ValueError, match="HTTP\(S\)"):
+    with pytest.raises(ValueError, match=re.escape("HTTP(S)")):
         await Browser().fetch("ftp://example.test/file")
 
 

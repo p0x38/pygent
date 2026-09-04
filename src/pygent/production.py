@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import random
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -58,12 +59,14 @@ def is_retryable_provider_error(exc: BaseException) -> bool:
     """Return whether a provider error is safe to retry."""
     if isinstance(exc, (ProviderConnectionError, ProviderRateLimitError)):
         return True
+
     if isinstance(exc, ProviderRequestError):
         return exc.status_code in {408, 409, 425, 500, 502, 503, 504}
+
     return False
 
 
-async def retry_async(
+async def retry_async[T](
     operation: Callable[[], Awaitable[T]],
     *,
     policy: RetryPolicy | None = None,
@@ -75,6 +78,7 @@ async def retry_async(
     for attempt in range(1, policy.attempts + 1):
         if cancellation is not None and cancellation.cancelled:
             raise asyncio.CancelledError("agent cancellation requested")
+
         try:
             return await operation()
         except asyncio.CancelledError:
@@ -83,30 +87,38 @@ async def retry_async(
             if not is_retryable_provider_error(exc) or attempt >= policy.attempts:
                 raise
 
-            delay = min(policy.max_delay, policy.base_delay * (2 ** (attempt - 1)))
+            delay = min(
+                policy.max_delay,
+                policy.base_delay * (2 ** (attempt - 1)),
+            )
+
             if policy.jitter:
                 delay += random.uniform(0, policy.jitter)
+
             if cancellation is None:
                 await asyncio.sleep(delay)
             else:
-                try:
-                    await asyncio.wait_for(cancellation.wait(), timeout=delay)
-                except asyncio.TimeoutError:
-                    pass
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(
+                        cancellation.wait(),
+                        timeout=delay,
+                    )
 
     raise AssertionError("retry loop exited unexpectedly")
 
 
-async def cancellable_gather(
+async def cancellable_gather[T](
     *coroutines: Awaitable[T],
     cancellation: CancellationToken | None = None,
 ) -> list[T]:
     """Gather awaitables while reliably propagating cooperative cancellation."""
     tasks = [asyncio.ensure_future(coroutine) for coroutine in coroutines]
+
     if not tasks:
         return []
 
-    cancellation_task: asyncio.Task[None] | None = None
+    cancellation_task: asyncio.Task[T] | None = None
+
     try:
         if cancellation is None:
             return list(await asyncio.gather(*tasks))
@@ -114,36 +126,56 @@ async def cancellable_gather(
         if cancellation.cancelled:
             for task in tasks:
                 task.cancel()
+
             await asyncio.gather(*tasks, return_exceptions=True)
             raise asyncio.CancelledError("agent cancellation requested")
 
-        cancellation_task = asyncio.create_task(cancellation.wait())
+        async def wait_for_cancellation() -> T:
+            await cancellation.wait()
+            raise asyncio.CancelledError("agent cancellation requested")
+
+        cancellation_task = asyncio.create_task(wait_for_cancellation())
+        assert cancellation_task is not None
+
         pending: set[asyncio.Task[T]] = set(tasks)
+
         while pending:
-            done, pending = await asyncio.wait(
+            done, _ = await asyncio.wait(
                 [*pending, cancellation_task],
                 return_when=asyncio.FIRST_COMPLETED,
             )
-            if cancellation_task in done and cancellation.cancelled:
-                for task in pending:
-                    task.cancel()
-                await asyncio.gather(*pending, return_exceptions=True)
-                raise asyncio.CancelledError("agent cancellation requested")
 
             if cancellation_task in done:
-                done.discard(cancellation_task)
+                for task in pending:
+                    task.cancel()
 
-            if not pending:
-                break
+                await asyncio.gather(
+                    *pending,
+                    return_exceptions=True,
+                )
+                raise asyncio.CancelledError("agent cancellation requested")
+
+            completed: set[asyncio.Task[T]] = {task for task in pending if task in done}
+            pending.difference_update(completed)
 
         return [task.result() for task in tasks]
+
     except asyncio.CancelledError:
         for task in tasks:
             if not task.done():
                 task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+
+        await asyncio.gather(
+            *tasks,
+            return_exceptions=True,
+        )
         raise
+
     finally:
         if cancellation_task is not None:
             cancellation_task.cancel()
-            await asyncio.gather(cancellation_task, return_exceptions=True)
+
+            await asyncio.gather(
+                cancellation_task,
+                return_exceptions=True,
+            )

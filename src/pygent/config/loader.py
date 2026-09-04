@@ -119,7 +119,7 @@ def init_config(*, force: bool = False) -> Path:
     config = Config()
 
     path.write_text(
-        dumps(config.model_dump(mode="python")),
+        dumps(config.model_dump(mode="python", exclude_none=True)),
         encoding="utf-8",
     )
 

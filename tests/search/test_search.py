@@ -29,12 +29,12 @@ async def test_search_provider_can_be_implemented() -> None:
 
 @pytest.mark.asyncio
 async def test_duckduckgo_search_parses_results() -> None:
-    html = '''
+    html = """
     <a class="result__a" href="https://example.com">Example</a>
     <a class="result__snippet">A useful result</a>
     <a class="result__a" href="https://example.org">Second</a>
     <a class="result__snippet">Another result</a>
-    '''
+    """
     request = httpx.Request("GET", "https://html.duckduckgo.com/html/?q=test")
     response = httpx.Response(200, text=html, request=request)
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=response)):

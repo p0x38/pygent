@@ -98,3 +98,7 @@ class OllamaProvider(Provider):
                 "parameters": dict(parameters),
             },
         }
+
+    async def aclose(self) -> None:
+        """Close the underlying Ollama client."""
+        await self.client.aclose()

@@ -49,7 +49,7 @@ def get_memory(conversation: str, path: Path | None) -> None:
 
     for message in messages:
         content = message.content or ""
-        console.print(f"[{message.role}] {content}")
+        console.print(f"[{message.role}] {content}", markup=False)
 
 
 @memory.command("clear")

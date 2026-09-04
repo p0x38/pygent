@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -11,7 +11,7 @@ from pygent.types import ModelResponse
 T = TypeVar("T", bound=BaseModel)
 
 
-class StructuredOutput(Generic[T]):
+class StructuredOutput[T: BaseModel]:
     """Validate model JSON content against a Pydantic model."""
 
     def __init__(self, model: type[T]) -> None:
