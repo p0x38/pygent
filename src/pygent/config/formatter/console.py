@@ -37,17 +37,11 @@ class ConsoleFormatter(ConfigFormatter):
         """Format configuration environment variables."""
         return self.environment(config)
 
-    def toml(
-        self,
-        values: Mapping[str, TomlValue],
-    ) -> str:
+    def toml(self, values: Mapping[str, TomlValue]) -> str:
         """Format a TOML configuration mapping."""
         lines: list[str] = []
 
-        def visit(
-            table: Mapping[str, TomlValue],
-            prefix: str = "",
-        ) -> None:
+        def visit(table: Mapping[str, TomlValue], prefix: str = "") -> None:
             scalar_lines: list[str] = []
             nested: list[tuple[str, dict[str, TomlValue]]] = []
 
@@ -60,12 +54,7 @@ class ConsoleFormatter(ConfigFormatter):
             if prefix:
                 if lines:
                     lines.append("")
-
-                lines.append(
-                    self._section(
-                        self._section_name(prefix),
-                    )
-                )
+                lines.append(self._section(self._section_name(prefix)))
 
             lines.extend(scalar_lines)
 
@@ -80,11 +69,7 @@ class ConsoleFormatter(ConfigFormatter):
         """Format a TOML section path."""
         return ".".join(self._labels.section(part) for part in path.split("."))
 
-    def _format_toml_field(
-        self,
-        key: str,
-        value: TomlValue,
-    ) -> str:
+    def _format_toml_field(self, key: str, value: TomlValue) -> str:
         """Format one TOML field."""
         return (
             f"{self._labels.field(key)}: "
@@ -92,21 +77,15 @@ class ConsoleFormatter(ConfigFormatter):
             f"{self._source_suffix(self._labels.source('toml'))}"
         )
 
-    def environment(
-        self,
-        values: Mapping[str, str],
-    ) -> str:
+    def environment(self, values: Mapping[str, str]) -> str:
         """Format configuration environment variables."""
         sections: list[str] = []
-
         pygent_values = {
             name: value for name, value in values.items() if name.startswith("PYGENT_")
         }
-
         ollama_values = {
             name: value for name, value in values.items() if name.startswith("OLLAMA_")
         }
-
         openrouter_values = {
             name: value
             for name, value in values.items()
@@ -115,10 +94,8 @@ class ConsoleFormatter(ConfigFormatter):
 
         if pygent_values:
             sections.append(self.pygent(pygent_values))
-
         if ollama_values:
             sections.append(self.ollama(ollama_values))
-
         if openrouter_values:
             sections.append(self.openrouter(openrouter_values))
 
@@ -127,15 +104,11 @@ class ConsoleFormatter(ConfigFormatter):
     def pygent(self, values: Mapping[str, str]) -> str:
         """Format Pygent environment configuration."""
         provider = values.get("PYGENT_PROVIDER", "ollama")
-        model = values.get(
-            "PYGENT_MODEL",
-            "qwen2.5-coder:3b",
-        )
+        model = values.get("PYGENT_MODEL", "qwen2.5-coder:3b")
         source = self._labels.source("env")
-
         return "\n".join(
             [
-                self._section("Pygent"),
+                self._section(self._labels.section("pygent")),
                 (
                     f"{self._labels.field('provider')}: "
                     f"{self._values.format(provider)}"
@@ -149,20 +122,13 @@ class ConsoleFormatter(ConfigFormatter):
             ]
         )
 
-    def all(
-        self,
-        environment: Mapping[str, str],
-        config: Mapping[str, TomlValue],
-    ) -> str:
+    def all(self, environment: Mapping[str, str], config: Mapping[str, TomlValue]) -> str:
         """Format environment variables and configuration file values."""
         sections: list[str] = []
-
         if environment:
             sections.append(self.environment(environment))
-
         if config:
             sections.append(self.toml(config))
-
         return "\n\n".join(sections)
 
     def ollama(self, values: Mapping[str, str]) -> str:
@@ -172,10 +138,9 @@ class ConsoleFormatter(ConfigFormatter):
             return values.get(name, "Not set")
 
         source = self._labels.source("env")
-
         return "\n".join(
             [
-                self._section("Ollama"),
+                self._section(self._labels.section("ollama")),
                 (
                     f"{self._labels.field('keep_alive')}: "
                     f"{self._values.format(get('OLLAMA_KEEP_ALIVE'))}"
@@ -198,12 +163,7 @@ class ConsoleFormatter(ConfigFormatter):
                 ),
                 (
                     f"{self._labels.field('vulkan')}: "
-                    f"{
-                        self._values.format(
-                            get('OLLAMA_VULKAN'),
-                            style=ValueStyle.ENABLED,
-                        )
-                    }"
+                    f"{self._values.format(get('OLLAMA_VULKAN'), style=ValueStyle.ENABLED)}"
                     f"{self._source_suffix(source)}"
                 ),
             ]
@@ -211,24 +171,19 @@ class ConsoleFormatter(ConfigFormatter):
 
     def openrouter(self, values: Mapping[str, str]) -> str:
         """Format OpenRouter environment configuration."""
-        lines = ["[OpenRouter]"]
+        lines = [self._section(self._labels.section("openrouter"))]
         source = self._labels.source("env")
-
         fields = (
             ("OPENROUTER_API_KEY", "api_key"),
             ("OPENROUTER_BASE_URL", "base_url"),
         )
-
         for name, label_key in fields:
             if name not in values:
                 continue
-
             value = "********" if "KEY" in name else values[name]
-
             lines.append(
                 f"{self._labels.field(label_key)}: "
                 f"{self._values.format(value)}"
                 f"{self._source_suffix(source)}"
             )
-
         return "\n".join(lines)
