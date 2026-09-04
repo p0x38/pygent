@@ -26,6 +26,9 @@ Pygent development tasks and roadmap.
 - [ ] Provider usage tests
 - [ ] Usage aggregation across iterations
 - [ ] Usage aggregation across tool loops
+- [ ] Quota/budget tracking and enforcement
+- [ ] Cost calculation and estimation
+- [ ] Provider/model pricing metadata
 - [ ] Optional request timing metadata
 - [ ] Structured execution diagnostics
 
@@ -212,3 +215,5 @@ Pygent development tasks and roadmap.
 - [ ] Agent hooks/lifecycle events
 - [ ] Better tracing/observability integration
 - [ ] Plugin/extension system
+- [ ] MCP server support
+- [ ] ACP server support
