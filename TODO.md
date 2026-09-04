@@ -4,25 +4,7 @@ Pygent development tasks and roadmap.
 
 ## Current Queue
 
-### 1. Production Hardening
-
-- [x] Request timeout support
-- [x] Maximum tool-call limits
-- [x] Concurrent tool execution
-- [x] Cancellation support
-- [x] Tool timeouts
-- [x] Tool cancellation
-- [x] Robust concurrent tool execution
-- [x] Context-size handling
-- [x] Retry/backoff policy
-- [x] Connection/resource lifecycle handling
-- [x] Graceful shutdown
-- [x] Exception chaining and diagnostics
-- [x] Deterministic test coverage
-- [x] Edge-case tests
-- [x] Stress/concurrency tests
-
-### 2. Core Correctness
+### 1. Core Correctness
 
 - [ ] Provider contract tests
   - [ ] Common provider behavior
@@ -39,7 +21,7 @@ Pygent development tasks and roadmap.
 - [ ] Review public API exports
 - [ ] Remove dead/accidental code
 
-### 3. Usage and Observability
+### 2. Usage and Observability
 
 - [ ] Provider usage tests
 - [ ] Usage aggregation across iterations
@@ -47,19 +29,8 @@ Pygent development tasks and roadmap.
 - [ ] Optional request timing metadata
 - [ ] Structured execution diagnostics
 
-### 4. Web Search and Browser Completion
+### 3. Web Search and Browser Completion
 
-- [x] Provider-neutral web search abstraction
-- [x] Search provider interface
-- [x] DuckDuckGo provider
-- [x] Normalized search results
-- [x] Search limits
-- [x] Search error handling
-- [x] Search tests
-- [x] Browser abstraction
-- [x] URL fetching
-- [x] Response size limits
-- [x] Redirect handling
 - [ ] Link clicking
 - [ ] Text finding
 - [ ] Normalized browser results
@@ -68,7 +39,7 @@ Pygent development tasks and roadmap.
 - [ ] Browser resource cleanup
 - [ ] Search/browser agent tools
 
-### 5. API Stabilization
+### 4. API Stabilization
 
 - [ ] Review all public exports
 - [ ] Review naming consistency
@@ -80,7 +51,7 @@ Pygent development tasks and roadmap.
 - [ ] Define backwards-compatibility policy
 - [ ] Remove experimental APIs that should not be public
 
-### 6. Documentation and Examples
+### 5. Documentation and Examples
 
 - [ ] Installation documentation
 - [ ] Quick-start documentation
@@ -103,23 +74,7 @@ Pygent development tasks and roadmap.
 - [ ] API reference
 - [ ] Keep README feature/status tables synchronized with implementation
 
-Examples:
-
-- [ ] `examples/basic_agent.py`
-- [ ] `examples/ollama.py`
-- [ ] `examples/openai.py`
-- [ ] `examples/openrouter.py`
-- [ ] `examples/custom_provider.py`
-- [ ] `examples/custom_tool.py`
-- [ ] `examples/web_search.py`
-- [ ] `examples/browser.py`
-- [ ] `examples/memory.py`
-- [ ] `examples/middleware.py`
-- [ ] `examples/routing.py`
-- [ ] `examples/streaming.py`
-- [ ] `examples/structured_output.py`
-
-### 7. CI and Packaging
+### 6. CI and Packaging
 
 - [ ] Python 3.13 CI coverage
 - [ ] Test multiple operating systems where practical
@@ -134,11 +89,11 @@ Examples:
 - [ ] Fix Ruff/isort import sorting locally
 - [ ] Verify CI passes after local Ruff fixes
 
-### 8. Alpha Release
+### 7. Alpha Release
 
 - [ ] Final API review
 - [ ] Final test suite pass
-- [ ] Ruff/lint pass
+- [x] Ruff/lint pass
 - [ ] Type-check pass
 - [ ] CI pass
 - [ ] README review
@@ -151,6 +106,8 @@ Examples:
 - [ ] Verify installation from published package
 
 ## Completed
+
+### Core
 
 - [x] Core provider-neutral types
 - [x] `Provider` interface
@@ -179,30 +136,16 @@ Examples:
 - [x] Usage tracking middleware
 - [x] Streaming API and agent events
 - [x] Model usage representation
-- [x] Request timeout support
-- [x] Maximum tool-call limits
-- [x] Concurrent tool execution
-- [x] Structured output API
-- [x] Pydantic model validation
-- [x] Structured output errors
-- [x] Structured output tests
-- [x] Web search abstraction
-- [x] DuckDuckGo provider
-- [x] Normalized search results
-- [x] Browser abstraction
-- [x] Page retrieval
-- [x] Request limits
-- [x] Redirect handling
-- [x] Username configuration
-- [x] Persistent conversation memory
-- [x] CLI memory management
-- [x] GitHub Actions test workflow
-- [x] GitHub Actions lint/type-check workflow
-
-## Work in Progress
 
 ### Production Hardening
 
+- [x] Request timeout support
+- [x] Maximum tool-call limits
+- [x] Concurrent tool execution
+- [x] Cancellation support
+- [x] Tool timeouts
+- [x] Tool cancellation
+- [x] Robust concurrent tool execution
 - [x] Context-size handling
 - [x] Retry/backoff policy
 - [x] Connection/resource lifecycle handling
@@ -212,32 +155,39 @@ Examples:
 - [x] Edge-case tests
 - [x] Stress/concurrency tests
 
-### Core
+### Structured Output
 
-- [ ] Provider contract tests
-- [ ] Improve agent context handling
-- [ ] Review agent/tool loop edge cases
-- [ ] Add comprehensive agent-loop tests
-- [ ] Review public API exports
-- [ ] Remove dead/accidental code
+- [x] Structured output API
+- [x] Pydantic model validation
+- [x] Structured output errors
+- [x] Structured output tests
 
 ### Web Search / Browser
 
-- [ ] Link clicking
-- [ ] Text finding
-- [ ] Normalized browser results
-- [ ] Browser-specific errors
-- [ ] Browser tests
-- [ ] Browser resource cleanup
-- [ ] Search/browser agent tools
+- [x] Web search abstraction
+- [x] DuckDuckGo provider
+- [x] Normalized search results
+- [x] Page retrieval
+- [x] Request limits
+- [x] Redirect handling
 
-### Usage and Observability
+### Other
 
-- [ ] Provider usage tests
-- [ ] Usage aggregation across iterations
-- [ ] Usage aggregation across tool loops
-- [ ] Optional request timing metadata
-- [ ] Structured execution diagnostics
+- [x] Username configuration
+- [x] Persistent conversation memory
+- [x] CLI memory management
+- [x] GitHub Actions test workflow
+- [x] GitHub Actions lint/type-check workflow
+
+## Work in Progress
+
+- [ ] Core correctness
+- [ ] Usage and observability
+- [ ] Web search / browser completion
+- [ ] API stabilization
+- [ ] Documentation and examples
+- [ ] CI and packaging
+- [ ] Alpha release
 
 ## Planned
 
