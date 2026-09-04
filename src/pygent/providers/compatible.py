@@ -53,12 +53,11 @@ class OpenAICompatibleProvider(Provider):
                 headers=headers,
                 timeout=timeout,
             )
-        self._owns_client = client is None or not self._has_user_managed_client(client)
-        self.client = client
+            self._owns_client = True
+        else:
+            self._owns_client = False
 
-    @staticmethod
-    def _has_user_managed_client(client: httpx.AsyncClient) -> bool:
-        return not getattr(client, "_is_pygent_default", True)
+        self.client = client
 
     async def aclose(self) -> None:
         """Close the underlying HTTP client if Pygent created it."""
