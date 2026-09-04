@@ -24,13 +24,71 @@ Pygent development tasks and roadmap.
 ### 2. Usage and Observability
 
 - [ ] Provider usage tests
+  - [ ] Verify input token counts
+  - [ ] Verify output token counts
+  - [ ] Verify total token counts
+  - [ ] Cover providers that expose usage directly
+  - [ ] Cover providers that do not expose usage
+  - [ ] Cover missing/partial usage fields
 - [ ] Usage aggregation across iterations
+  - [ ] Aggregate usage from every provider request in one agent run
+  - [ ] Preserve per-request usage for diagnostics
+  - [ ] Define behavior when one request has unknown usage
+  - [ ] Add regression tests for multi-iteration aggregation
 - [ ] Usage aggregation across tool loops
+  - [ ] Include the initial model request
+  - [ ] Include follow-up requests after tool execution
+  - [ ] Keep tool execution itself separate from model token usage
+  - [ ] Add regression tests for multiple tool calls and loops
 - [ ] Quota/budget tracking and enforcement
+  - [ ] Define request-count limits
+  - [ ] Define input/output/total token limits
+  - [ ] Define per-run and optional global budgets
+  - [ ] Track usage against configured budgets
+  - [ ] Enforce limits before starting a request
+  - [ ] Enforce limits after provider usage is known
+  - [ ] Define behavior when usage is unavailable
+  - [ ] Add quota/budget-specific exceptions
+  - [ ] Add configuration and tests
 - [ ] Cost calculation and estimation
+  - [ ] Define a normalized pricing representation
+  - [ ] Calculate input token cost
+  - [ ] Calculate output token cost
+  - [ ] Calculate total estimated request cost
+  - [ ] Support missing/unknown pricing
+  - [ ] Distinguish estimated cost from provider-reported cost
+  - [ ] Add cost calculation tests
 - [ ] Provider/model pricing metadata
+  - [ ] Define model pricing metadata structure
+  - [ ] Support input/output token prices
+  - [ ] Support optional cached-input pricing
+  - [ ] Associate pricing with provider/model identifiers
+  - [ ] Define precedence for provider-specific pricing overrides
+  - [ ] Handle unknown models without failing requests
+  - [ ] Add pricing metadata tests
 - [ ] Optional request timing metadata
+  - [ ] Record request start/end timestamps
+  - [ ] Record elapsed request duration
+  - [ ] Keep timing collection optional
+  - [ ] Include timing in structured execution diagnostics
+  - [ ] Add tests for timing metadata
 - [ ] Structured execution diagnostics
+  - [ ] Define a normalized execution event/record format
+  - [ ] Record provider/model information
+  - [ ] Record request/response timing
+  - [ ] Record usage and estimated cost
+  - [ ] Record tool-call lifecycle information
+  - [ ] Record retry attempts and failures
+  - [ ] Make diagnostics consumable without enabling verbose logging
+- [ ] Configurable artificial response delays / waiting behavior
+  - [ ] Support optional delay before provider requests
+  - [ ] Support optional delay before emitting streamed/final responses
+  - [ ] Allow fixed and configurable delay strategies
+  - [ ] Keep delays disabled by default
+  - [ ] Make delays cancellation-aware
+  - [ ] Avoid blocking the event loop
+  - [ ] Expose delay behavior through configuration/API
+  - [ ] Add deterministic tests using injected clocks/sleepers
 
 ### 3. Web Search and Browser Completion
 
