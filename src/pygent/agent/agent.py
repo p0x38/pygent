@@ -7,6 +7,7 @@ from pygent.agent.context import AgentContext
 from pygent.agent.loop import AgentLoop
 from pygent.agent.messages import user_message
 from pygent.memory.base import Memory
+from pygent.production import CancellationToken, RetryPolicy
 from pygent.providers.base import Provider
 from pygent.tools.registry import ToolRegistry
 from pygent.types import Message
@@ -31,6 +32,9 @@ class Agent:
         max_iterations: int = 8,
         max_tool_calls: int | None = None,
         total_timeout: float | None = None,
+        max_context_messages: int | None = None,
+        retry_policy: RetryPolicy | None = None,
+        cancellation: CancellationToken | None = None,
         memory: Memory | None = None,
     ) -> None:
         self.loop = AgentLoop(
@@ -39,8 +43,21 @@ class Agent:
             max_iterations=max_iterations,
             max_tool_calls=max_tool_calls,
             total_timeout=total_timeout,
+            max_context_messages=max_context_messages,
+            retry_policy=retry_policy,
+            cancellation=cancellation,
         )
         self.memory = memory
+
+    async def aclose(self) -> None:
+        """Release resources owned by the agent's provider."""
+        await self.loop.aclose()
+
+    async def __aenter__(self) -> Agent:
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        await self.aclose()
 
     async def run(
         self,
