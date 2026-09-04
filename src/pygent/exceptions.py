@@ -45,6 +45,10 @@ class RouterError(PygentError):
     """Base exception for routing failures."""
 
 
+class StructuredOutputError(PygentError):
+    """Raised when a model response cannot satisfy a structured output model."""
+
+
 class ToolError(PygentError):
     """Base exception for tool-related failures."""
 
