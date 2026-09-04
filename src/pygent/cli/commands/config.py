@@ -11,20 +11,24 @@ from pygent.config import (
     init_config,
     load_toml,
 )
-from pygent.i18n import Translator
+from pygent.i18n import Translator, load_translator
 
 from ..ui.console import console
 
 
-def _get_formatter() -> ConsoleFormatter:
+def _get_translator(ctx: click.Context) -> Translator:
+    """Return the translator configured by the root CLI context."""
+    root = ctx.find_root()
+    if isinstance(root.obj, dict):
+        translator = root.obj.get("translator")
+        if isinstance(translator, Translator):
+            return translator
+    return load_translator()
+
+
+def _get_formatter(ctx: click.Context) -> ConsoleFormatter:
     """Create the console configuration formatter."""
-    translator = Translator(
-        {
-            # Temporary/default English catalog.
-            # Replace this with your locale loader later.
-        }
-    )
-    return ConsoleFormatter(translator)
+    return ConsoleFormatter(_get_translator(ctx))
 
 
 def _get_environment() -> dict[str, str]:
@@ -66,13 +70,15 @@ def get(name: str) -> None:
 
 
 @config.command("show")
-def show_config() -> None:
+@click.pass_context
+def show_config(ctx: click.Context) -> None:
     """Show Pygent environment and TOML configuration."""
-    list_config()
+    list_config(ctx)
 
 
 @config.command("list")
-def list_config() -> None:
+@click.pass_context
+def list_config(ctx: click.Context) -> None:
     """List Pygent environment variables and configuration file values."""
     environment = _get_environment()
     path = config_path()
@@ -84,14 +90,15 @@ def list_config() -> None:
     except (OSError, ValueError) as exc:
         raise click.ClickException(str(exc)) from exc
 
+    translator = _get_translator(ctx)
     if not environment and not config_values:
-        console.print("[dim]No Pygent configuration found.[/dim]")
+        console.print(
+            f"[dim]{translator('config.message.none', default='No Pygent configuration found.')}[/dim]"
+        )
         return
 
-    formatter = _get_formatter()
-
     console.print(
-        formatter.all(
+        _get_formatter(ctx).all(
             environment,
             config_values,
         ),

@@ -1,71 +1,85 @@
+from __future__ import annotations
+
 from pygent.config import ConsoleFormatter
+from pygent.config.formatter.value import ByteBase, ValueFormatter, ValueStyle
+from pygent.i18n import load_translator
 
 
-def test_ollama_formatter() -> None:
-    values = {
-        "OLLAMA_KEEP_ALIVE": "-1",
-        "OLLAMA_LLM_LIBRARY": "cpu",
-        "OLLAMA_MAX_LOADED_MODELS": "1",
-        "OLLAMA_NUM_PARALLEL": "8",
-        "OLLAMA_VULKAN": "0",
-    }
+def formatter(locale: str = "en") -> ConsoleFormatter:
+    return ConsoleFormatter(load_translator(locale))
 
-    assert ConsoleFormatter.ollama(values) == "\n".join(
-        [
-            "[Ollama]",
-            "Keep alive: infinite",
-            "LLM Library: CPU",
-            "Max loaded models: 1",
-            "Parallel requests: 8",
-            "Vulkan: Disabled",
-        ]
+
+def test_value_formatter_detects_units_before_number() -> None:
+    values = ValueFormatter(load_translator())
+
+    assert values.detect_style(1024, unit="B") is ValueStyle.SIZE
+    assert values.detect_style(2, unit="s") is ValueStyle.DURATION
+    assert values.detect_style(2, unit="ms") is ValueStyle.DURATION
+    assert values.detect_style(2) is ValueStyle.NUMBER
+
+
+def test_value_formatter_coerces_common_scalars() -> None:
+    values = ValueFormatter(load_translator())
+
+    assert values.format("true") == "True"
+    assert values.format("42") == "42"
+    assert values.format("3.5") == "3.5"
+    assert values.format("08") == '"08"'
+    assert values.format("ollama") == '"ollama"'
+
+
+def test_value_formatter_formats_byte_sizes() -> None:
+    values = ValueFormatter(load_translator())
+
+    assert values.format(1, style=ValueStyle.SIZE, unit="B") == "1 byte"
+    assert values.format(2, style=ValueStyle.SIZE, unit="B") == "2 bytes"
+    assert values.format(1000, style=ValueStyle.SIZE, unit="B") == "1 KB"
+    assert values.format(1000, style=ValueStyle.SIZE, unit="KB") == "1 MB"
+    assert values.format(1024, style=ValueStyle.SIZE, unit="B", byte_base=ByteBase.BINARY) == "1 KiB"
+    assert values.format(1024, style=ValueStyle.SIZE, unit="KiB", byte_base=ByteBase.BINARY) == "1 MiB"
+
+
+def test_value_formatter_converts_duration_units() -> None:
+    values = ValueFormatter(load_translator())
+
+    assert values.format(1000, style=ValueStyle.DURATION, unit="ms") == "1 second"
+    assert values.format(90, style=ValueStyle.DURATION, unit="s") == "1 minute 30 seconds"
+    assert values.format(2, style=ValueStyle.DURATION, unit="min") == "2 minutes"
+
+
+def test_value_formatter_localizes_values_and_durations() -> None:
+    values = ValueFormatter(load_translator("ja"))
+
+    assert values.format(True, style=ValueStyle.ENABLED) == "有効"
+    assert values.format(False, style=ValueStyle.YES_NO) == "いいえ"
+    assert values.format(1, style=ValueStyle.SIZE, unit="B") == "1 バイト"
+    assert values.format(120, style=ValueStyle.DURATION, unit="s") == "2分"
+
+
+def test_console_formatter_escapes_rich_section_markup() -> None:
+    output = formatter().toml(
+        {
+            "default": {"provider": "ollama"},
+            "chat": {"syntax": {"enabled": True}},
+        }
     )
 
+    assert "\\[default]" in output
+    assert "\\[chat.syntax]" in output
+    assert 'provider: "ollama" (via toml)' in output
+    assert "enabled: True (via toml)" in output
 
-def test_openrouter_formatter() -> None:
-    values = {
-        "OPENROUTER_API_KEY": "secret",
-        "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
-    }
 
-    result = ConsoleFormatter.openrouter(values)
-
-    assert result == "\n".join(
-        [
-            "[OpenRouter]",
-            "API key: ********",
-            "Base URL: https://openrouter.ai/api/v1",
-        ]
+def test_console_formatter_localizes_sections_and_fields() -> None:
+    output = formatter("ja").environment(
+        {
+            "OLLAMA_KEEP_ALIVE": "-1",
+            "OLLAMA_VULKAN": "false",
+        }
     )
 
-
-def test_openrouter_formatter_hides_api_key() -> None:
-    values = {
-        "OPENROUTER_API_KEY": "super-secret",
-    }
-
-    result = ConsoleFormatter.openrouter(values)
-
-    assert "super-secret" not in result
-    assert "API key: ********" in result
-
-
-def test_all_formatter() -> None:
-    values = {
-        "PYGENT_PROVIDER": "ollama",
-        "PYGENT_MODEL": "qwen2.5-coder:3b",
-        "OLLAMA_KEEP_ALIVE": "-1",
-        "OLLAMA_LLM_LIBRARY": "cpu",
-        "OPENROUTER_API_KEY": "secret",
-    }
-
-    result = ConsoleFormatter.all(values)
-
-    assert "[Default]" in result
-    assert "[Ollama]" in result
-    assert "[OpenRouter]" in result
-    assert "Provider: ollama" in result
-    assert "Model: qwen2.5-coder:3b" in result
-    assert "Keep alive: infinite" in result
-    assert "API key: ********" in result
-    assert "secret" not in result
+    assert "Ollama" in output
+    assert "キープアライブ" in output
+    assert "Vulkan" in output
+    assert "無効" in output
+    assert "環境変数" in output

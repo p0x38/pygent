@@ -32,6 +32,9 @@ no = "No"
 env = "env"
 toml = "toml"
 
+[config.source_suffix]
+default = " (via {source})"
+
 [config.unit]
 byte = "byte"
 bytes = "bytes"
@@ -42,3 +45,6 @@ day = "{count} day"
 hour = "{count} hour"
 minute = "{count} minute"
 second = "{count} second"
+
+[config.message]
+none = "No Pygent configuration found."
