@@ -50,3 +50,24 @@ def test_persistent_memory_rejects_invalid_json(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Could not load memory file"):
         PersistentConversationMemory(path=path)
+
+
+def test_persistent_memory_loads_valid_json_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "memory.json"
+    memory = PersistentConversationMemory("chat", path=path)
+    memory.add(Message(role="user", content="hello"))
+
+    original_read_text = Path.read_text
+    reads = 0
+
+    def counted_read_text(self: Path, *args: object, **kwargs: object) -> str:
+        nonlocal reads
+        if self == path:
+            reads += 1
+        return original_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counted_read_text)
+    restored = PersistentConversationMemory("chat", path=path)
+
+    assert restored.messages()[0].content == "hello"
+    assert reads == 1
