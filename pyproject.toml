@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pygent"
-version = "0.2.0"
+version = "0.2.1"
 description = "A modular, provider-agnostic AI agent framework for Python."
 readme = "README.md"
 license = { file = "LICENSE" }
