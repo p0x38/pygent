@@ -4,7 +4,14 @@ import asyncio
 
 import pytest
 
-from pygent.production import CancellationToken, cancellable_gather
+from pygent.exceptions import ProviderConnectionError, ProviderRequestError
+from pygent.production import (
+    CancellationToken,
+    RetryPolicy,
+    cancellable_gather,
+    is_retryable_provider_error,
+    retry_async,
+)
 
 
 @pytest.mark.asyncio
@@ -67,3 +74,68 @@ async def test_cancellable_gather_rejects_pre_cancelled_token() -> None:
 
     with pytest.raises(asyncio.CancelledError):
         await cancellable_gather(asyncio.sleep(0), cancellation=token)
+
+
+def test_retry_policy_validation() -> None:
+    with pytest.raises(ValueError):
+        RetryPolicy(attempts=0)
+    with pytest.raises(ValueError):
+        RetryPolicy(base_delay=-1)
+    with pytest.raises(ValueError):
+        RetryPolicy(base_delay=2, max_delay=1)
+
+
+def test_provider_retry_classification() -> None:
+    assert is_retryable_provider_error(ProviderConnectionError("down"))
+    assert is_retryable_provider_error(ProviderRequestError("busy", status_code=503))
+    assert not is_retryable_provider_error(ProviderRequestError("bad", status_code=400))
+
+
+@pytest.mark.asyncio
+async def test_retry_async_retries_transient_error() -> None:
+    attempts = 0
+
+    async def operation() -> str:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise ProviderConnectionError("temporary")
+        return "ok"
+
+    result = await retry_async(
+        operation,
+        policy=RetryPolicy(attempts=3, base_delay=0, jitter=0),
+    )
+
+    assert result == "ok"
+    assert attempts == 3
+
+
+@pytest.mark.asyncio
+async def test_retry_async_does_not_retry_permanent_error() -> None:
+    attempts = 0
+
+    async def operation() -> None:
+        nonlocal attempts
+        attempts += 1
+        raise ProviderRequestError("bad request", status_code=400)
+
+    with pytest.raises(ProviderRequestError):
+        await retry_async(
+            operation,
+            policy=RetryPolicy(attempts=3, base_delay=0, jitter=0),
+        )
+
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_retry_async_honors_cancellation() -> None:
+    token = CancellationToken()
+
+    async def operation() -> None:
+        raise ProviderConnectionError("temporary")
+
+    token.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await retry_async(operation, cancellation=token)
