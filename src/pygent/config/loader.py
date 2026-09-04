@@ -22,12 +22,7 @@ type TomlValue = str | int | float | bool | list["TomlValue"] | dict[str, "TomlV
 
 
 def load_toml(path: str | Path | None = None) -> dict[str, TomlValue]:
-    """Load raw Pygent configuration from a TOML file.
-
-    If ``path`` is omitted, the user-level Pygent configuration path is used.
-
-    A missing configuration file returns an empty mapping.
-    """
+    """Load raw Pygent configuration from a TOML file."""
     config_file = Path(path) if path is not None else config_path()
 
     if not config_file.exists():
@@ -72,11 +67,7 @@ def _ensure_loaded() -> None:
 
 
 def load_dotenv(*, path: str | Path | None = None) -> bool:
-    """Load a ``.env`` file into :data:`os.environ`.
-
-    Returns ``True`` if the file was loaded, or ``False`` if the optional
-    ``python-dotenv`` dependency is not installed.
-    """
+    """Load a ``.env`` file into :data:`os.environ`."""
     global _loaded, _load_error
 
     if path is not None:
@@ -95,10 +86,7 @@ def load_dotenv(*, path: str | Path | None = None) -> bool:
     return _load_error is None
 
 
-def getenv(
-    name: str,
-    default: str | None = None,
-) -> str | None:
+def getenv(name: str, default: str | None = None) -> str | None:
     """Return an environment variable after attempting to load ``.env``."""
     _ensure_loaded()
     return os.environ.get(name, default)
@@ -120,13 +108,7 @@ def load_config(path: str | Path | None = None) -> Config:
 
 
 def init_config(*, force: bool = False) -> Path:
-    """Create the default Pygent configuration file.
-
-    Raises:
-        FileExistsError: If the configuration already exists and ``force`` is
-            False.
-        OSError: If the configuration directory or file cannot be created.
-    """
+    """Create the default Pygent configuration file."""
     path = config_path()
 
     if path.exists() and not force:
@@ -146,24 +128,17 @@ def init_config(*, force: bool = False) -> Path:
 
 def get_default_provider() -> str:
     """Return the configured default provider."""
-    return (
-        getenv(
-            "PYGENT_PROVIDER",
-            load_config().provider.provider,
-        )
-        or "ollama"
-    )
+    return getenv("PYGENT_PROVIDER", load_config().provider.provider) or "ollama"
 
 
 def get_default_model() -> str:
     """Return the configured default model."""
-    return (
-        getenv(
-            "PYGENT_MODEL",
-            load_config().provider.model,
-        )
-        or "qwen2.5-coder:3b"
-    )
+    return getenv("PYGENT_MODEL", load_config().provider.model) or "qwen2.5-coder:3b"
+
+
+def get_username() -> str | None:
+    """Return the configured username, with environment override."""
+    return getenv("PYGENT_USERNAME", load_config().user.username)
 
 
 __all__ = [
@@ -171,6 +146,7 @@ __all__ = [
     "config_path",
     "get_default_model",
     "get_default_provider",
+    "get_username",
     "getenv",
     "init_config",
     "load_config",
