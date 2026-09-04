@@ -13,14 +13,14 @@ Pygent development tasks and roadmap.
 - [x] Tool timeouts
 - [x] Tool cancellation
 - [x] Robust concurrent tool execution
-- [ ] Context-size handling
-- [ ] Retry/backoff policy
-- [ ] Connection/resource lifecycle handling
-- [ ] Graceful shutdown
-- [ ] Exception chaining and diagnostics
-- [ ] Deterministic test coverage
-- [ ] Edge-case tests
-- [ ] Stress/concurrency tests
+- [x] Context-size handling
+- [x] Retry/backoff policy
+- [x] Connection/resource lifecycle handling
+- [x] Graceful shutdown
+- [x] Exception chaining and diagnostics
+- [x] Deterministic test coverage
+- [x] Edge-case tests
+- [x] Stress/concurrency tests
 
 ### 2. Core Correctness
 
@@ -203,14 +203,14 @@ Examples:
 
 ### Production Hardening
 
-- [ ] Context-size handling
-- [ ] Retry/backoff policy
-- [ ] Connection/resource lifecycle handling
-- [ ] Graceful shutdown
-- [ ] Exception chaining and diagnostics
-- [ ] Deterministic test coverage
-- [ ] Edge-case tests
-- [ ] Stress/concurrency tests
+- [x] Context-size handling
+- [x] Retry/backoff policy
+- [x] Connection/resource lifecycle handling
+- [x] Graceful shutdown
+- [x] Exception chaining and diagnostics
+- [x] Deterministic test coverage
+- [x] Edge-case tests
+- [x] Stress/concurrency tests
 
 ### Core
 

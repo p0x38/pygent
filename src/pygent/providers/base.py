@@ -19,6 +19,14 @@ class Provider(ABC):
         """Generate a response from a conversation."""
         raise NotImplementedError
 
+    async def aclose(self) -> None:
+        """Release provider resources owned by the implementation."""
+
+    async def __aenter__(self) -> Provider:
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        await self.aclose()
     async def stream(
         self,
         messages: Sequence[Message],
