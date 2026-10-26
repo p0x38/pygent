@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, cast
 
 import httpx
@@ -36,6 +36,8 @@ class OpenAICompatibleProvider(Provider):
         timeout: float = 60.0,
         extra_body: Mapping[str, Any] | None = None,
         default_headers: Mapping[str, str] | None = None,
+        message_formatter: Callable[[Message], str] | None = None,
+        include_name_metadata: bool = True,
     ) -> None:
         if not model:
             raise ValueError("model must not be empty")
@@ -48,6 +50,8 @@ class OpenAICompatibleProvider(Provider):
         self.timeout = timeout
         self.extra_body: dict[str, Any] = dict(extra_body or {})
         self.default_headers: dict[str, str] = dict(default_headers or {})
+        self.message_formatter = message_formatter
+        self.include_name_metadata = include_name_metadata
 
         if client is None:
             headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -205,11 +209,20 @@ class OpenAICompatibleProvider(Provider):
             total_tokens=_int("total_tokens"),
         )
 
-    @staticmethod
-    def _message_to_payload(message: Message) -> dict[str, Any]:
+    def _message_to_payload(self, message: Message) -> dict[str, Any]:
         result: dict[str, Any] = {"role": message.role}
+
+        if message.name is not None and (
+            self.include_name_metadata or message.role == "tool"
+        ):
+            result["name"] = message.name
+
         if message.content is not None:
-            result["content"] = message.content
+            result["content"] = (
+                self.message_formatter(message)
+                if self.message_formatter is not None
+                else message.content
+            )
         elif message.role == "assistant" and message.tool_calls:
             result["content"] = None
 
@@ -225,11 +238,9 @@ class OpenAICompatibleProvider(Provider):
                 }
                 for call in message.tool_calls
             ]
-        elif message.role == "tool":
-            if message.tool_call_id is not None:
-                result["tool_call_id"] = message.tool_call_id
-            if message.name is not None:
-                result["name"] = message.name
+        elif message.role == "tool" and message.tool_call_id is not None:
+            result["tool_call_id"] = message.tool_call_id
+
         return result
 
     @staticmethod

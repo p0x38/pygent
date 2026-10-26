@@ -243,3 +243,61 @@ async def test_extra_body_is_merged() -> None:
     payload = json.loads(sent.content)
     assert math.isclose(payload["temperature"], 0.5)
     assert payload["metadata"] == {"trace": "abc"}
+
+@pytest.mark.asyncio
+async def test_user_message_preserves_participant_name() -> None:
+    transport = _StubTransport([_make_response()])
+    client = httpx.AsyncClient(
+        transport=transport,
+        base_url="https://api.example/v1",
+    )
+    provider = OpenAICompatibleProvider("test-model", client=client)
+
+    await provider.complete([
+        Message(role="user", name="user1", content="Hi"),
+        Message(role="user", name="user2", content="Hello"),
+    ])
+
+    payload = json.loads(transport.calls[0].content)
+
+    assert payload["messages"] == [
+        {"role": "user", "name": "user1", "content": "Hi"},
+        {"role": "user", "name": "user2", "content": "Hello"},
+    ]
+
+@pytest.mark.asyncio
+async def test_message_formatter_embeds_name_in_content() -> None:
+    transport = _StubTransport([_make_response()])
+    client = httpx.AsyncClient(
+        transport=transport,
+        base_url="https://api.example/v1",
+    )
+
+    def format_message(message: Message) -> str:
+        if message.role == "user" and message.name:
+            return f"[{message.name}] {message.content or ''}"
+        
+        return message.content or ""
+
+    provider = OpenAICompatibleProvider(
+        "test-model",
+        client=client,
+        message_formatter=format_message,
+        include_name_metadata=False,
+    )
+
+    try:
+        await provider.complete([
+            Message(role="user", name="user1", content="Boo"),
+            Message(role="user", name="user2", content="Hi"),
+        ])
+
+        payload = json.loads(transport.calls[0].content)
+
+        assert payload["messages"] == [
+            {"role": "user", "content": "[user1] Boo"},
+            {"role": "user", "content": "[user2] Hi"},
+        ]
+    finally:
+        await client.aclose()
+
