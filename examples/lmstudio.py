@@ -20,16 +20,18 @@ def format_message(message: Message) -> str:
 
 async def main() -> None:
     memory = ConversationMemory()
-    memory.seed([
-        Message(
-            role="system",
-            content=(
-                "You are participating in a group conversation. "
-                "User messages may begin with [username]. "
-                "Keep track of which participant said each thing."
+    memory.seed(
+        [
+            Message(
+                role="system",
+                content=(
+                    "You are participating in a group conversation. "
+                    "User messages may begin with [username]. "
+                    "Keep track of which participant said each thing."
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
     provider = LMStudioProvider(
         model="your-loaded-model-id",

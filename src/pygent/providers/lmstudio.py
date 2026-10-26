@@ -17,17 +17,17 @@ class LMStudioProvider(OpenAICompatibleProvider):
     DEFAULT_BASE_URL = "http://localhost:1234/v1"
 
     def __init__(
-            self,
-            model: str,
-            *,
-            base_url: str = DEFAULT_BASE_URL,
-            api_key: str | None = None,
-            client: httpx.AsyncClient | None = None,
-            timeout: float = 60.0,
-            extra_body: Mapping[str, Any] | None = None,
-            default_headers: Mapping[str, str] | None = None,
-            message_formatter: Callable[[Message], str] | None = None,
-            include_name_metadata: bool = True,
+        self,
+        model: str,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        api_key: str | None = None,
+        client: httpx.AsyncClient | None = None,
+        timeout: float = 60.0,
+        extra_body: Mapping[str, Any] | None = None,
+        default_headers: Mapping[str, str] | None = None,
+        message_formatter: Callable[[Message], str] | None = None,
+        include_name_metadata: bool = True,
     ) -> None:
         if api_key is None:
             api_key = getenv("LM_STUDIO_API_KEY")

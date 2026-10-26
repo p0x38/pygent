@@ -244,6 +244,7 @@ async def test_extra_body_is_merged() -> None:
     assert math.isclose(payload["temperature"], 0.5)
     assert payload["metadata"] == {"trace": "abc"}
 
+
 @pytest.mark.asyncio
 async def test_user_message_preserves_participant_name() -> None:
     transport = _StubTransport([_make_response()])
@@ -253,10 +254,12 @@ async def test_user_message_preserves_participant_name() -> None:
     )
     provider = OpenAICompatibleProvider("test-model", client=client)
 
-    await provider.complete([
-        Message(role="user", name="user1", content="Hi"),
-        Message(role="user", name="user2", content="Hello"),
-    ])
+    await provider.complete(
+        [
+            Message(role="user", name="user1", content="Hi"),
+            Message(role="user", name="user2", content="Hello"),
+        ]
+    )
 
     payload = json.loads(transport.calls[0].content)
 
@@ -264,6 +267,7 @@ async def test_user_message_preserves_participant_name() -> None:
         {"role": "user", "name": "user1", "content": "Hi"},
         {"role": "user", "name": "user2", "content": "Hello"},
     ]
+
 
 @pytest.mark.asyncio
 async def test_message_formatter_embeds_name_in_content() -> None:
@@ -276,7 +280,7 @@ async def test_message_formatter_embeds_name_in_content() -> None:
     def format_message(message: Message) -> str:
         if message.role == "user" and message.name:
             return f"[{message.name}] {message.content or ''}"
-        
+
         return message.content or ""
 
     provider = OpenAICompatibleProvider(
@@ -287,10 +291,12 @@ async def test_message_formatter_embeds_name_in_content() -> None:
     )
 
     try:
-        await provider.complete([
-            Message(role="user", name="user1", content="Boo"),
-            Message(role="user", name="user2", content="Hi"),
-        ])
+        await provider.complete(
+            [
+                Message(role="user", name="user1", content="Boo"),
+                Message(role="user", name="user2", content="Hi"),
+            ]
+        )
 
         payload = json.loads(transport.calls[0].content)
 
@@ -300,4 +306,3 @@ async def test_message_formatter_embeds_name_in_content() -> None:
         ]
     finally:
         await client.aclose()
-
