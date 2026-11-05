@@ -55,7 +55,7 @@ cli = ["click>=8.3.1", "rich>=14.0.0"]
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
+    "pytest-asyncio>=1.4.1.post1",
     "ruff>=0.16.9",
     "pyright>=1.1.414",
 ]
